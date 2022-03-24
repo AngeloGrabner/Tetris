@@ -69,7 +69,7 @@ public class Game
                 forceDownCounter = 0;
             }
             move = collision(input);
-            if (move.any)
+            if (move.any) // if statment can be simplefied
             {
                 if (move.horizontal||move.rotation) // maybe do something or maybe not -.-
                 {
@@ -77,18 +77,21 @@ public class Game
                 }
                 else if (move.vertical)
                 {
+                    // lock tile in place spawn new tile etc.
+                    finalMove();
                     for (int i = 0; i < 4; i++) //height of the fild array 
                     {
-                        if (checkFullRow(tile.Y+i)) // check for any full rows 
+                        if (!(tile.Y+i < fildWidth && tile.Y+i >= 0)) // a out of bounce protection
+                        {
+                            continue;
+                        }
+                        else if (checkFullRow(tile.Y+i)) // check for any full rows on 
                         {
                             score++;
                             clearRowAndMoveAllOtherDown(tile.Y + i);
                         }
-                    }
-
-                    // lock tile in place spawn new tile etc.
+                    }              
                     tileExists = false;
-
                 }
             }
             else
@@ -101,6 +104,10 @@ public class Game
             Display.update(fild);
             Thread.Sleep(cooldown);
         }
+    }
+    private void setFinalPosition() // not to sure about that 
+    {
+
     }
     private void clearRowAndMoveAllOtherDown(int y)
     {
