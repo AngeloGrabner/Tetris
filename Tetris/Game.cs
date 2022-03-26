@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-readonly struct CollisionInfo
+readonly struct CollisionInfo // this struct is useless, but ey now it exists 
 {
     public readonly bool any;
     public readonly bool horizontal; //collosion on x 
@@ -24,6 +24,7 @@ public class Game
     private bool gameOver = false, stopInput = false, tileExists = false;
     private char input = ' ';
     private int errorFlag = 0, cooldown = 1000, forceDownCounter = 0, score = 0, fildWidth, fildHeigh;
+    public int ErrorFlag { get { return errorFlag; } }
     private Thread thd;
     private CollisionInfo move;
     private Tile tile;
@@ -132,28 +133,120 @@ public class Game
     { 
         return false; 
     }
-    private CollisionInfo collision(char direction) // checks if the move will collide with anything 
+    private CollisionInfo collision(char direction) // this will work on the first time testing it without but please 
     {
-        return new (false,false,false);
+        
+        bool rotation = false, vertical = false, horizontal = false;
+        if (direction == 'w') //rotation
+        {
+            Tile testTile = tile;
+            int newTileShape = 0;
+            if ((int)tile.shape % 4 == 3) // checks if adding 1 to the shape (with roration enum) courses the shape to change
+            {
+                newTileShape = (int)tile.shape - 3;
+            }
+            else // add 1 to the enum or 90 degrees to the shape 
+            {
+                newTileShape = (int)tile.shape + 1;
+            }
+            testTile.fillMap((Shape)newTileShape);
+            for (int x = 0; x<4; x++)
+            {
+                for (int y = 0; y < 4; y++)
+                {
+                    if (testTile.X + x < fildWidth && testTile.X + x >= 0 && testTile.Y + y < fildHeigh && testTile.Y + y >= 0 && testTile.map[x, y] == 'X') // checks for a out of bounce
+                    {
+                        if (fild[testTile.X + x, testTile.Y + y] != ' ' && testTile.map[x, y] == 'X') // collision occoured
+                        {
+                            rotation = true;
+                            goto end;
+                        }
+                    } 
+                }
+            }
+        }
+        else if (direction == 'd') // right
+        {
+            const int move = 1;
+            for (int x = 0; x < 4; x++)
+            {
+                for (int y = 0; y < 4; y++)
+                {
+                    if (tile.X + x + move < fildWidth && tile.map[x, y] == 'X') //out of bounce check 
+                    {
+                        if (fild[tile.X + x + move,tile.Y + y] != ' ') //collision check 
+                        {
+                            horizontal = true;
+                            goto end;
+                        }
+                    }
+                }
+            }
+        }
+        else if (direction == 'a') // left
+        {
+            const int move = -1;
+            for (int x = 0; x < 4; x++)
+            {
+                for (int y = 0; y < 4; y++)
+                {
+                    if (tile.X + x + move >= 0 && tile.map[x, y] == 'X') //out of bounce check 
+                    {
+                        if (fild[tile.X + x + move, tile.Y + y] != ' ') //collision check 
+                        {
+                            horizontal = true;
+                            goto end;
+                        }
+                    }
+                }
+            }
+        }
+        else if (direction == 's') // down
+        {
+            const int move = 1;
+            for (int x = 0; x < 4; x++)
+            {
+                for (int y = 0; y < 4; y++)
+                {
+                    if (tile.Y + y + move < fildHeigh && tile.map[x, y] == 'X') //out of bounce check 
+                    {
+                        if (fild[tile.X + x, tile.Y + y + move] != ' ') //collision check 
+                        {
+                            vertical = true;
+                            goto end;
+                        }
+                    }
+                }
+            }
+        }
+        end:
+        return new CollisionInfo(horizontal,vertical,rotation);
     }
     private Tile createNewTile()
     {
         return new(fildWidth / 2 + 2, 0, (Shape)(rand.Next(0, 7) * 4));
     }
-    private void doMove(char direction) 
+    private void doMove(char direction) // to be added: clear old postion
     {
+        for (int x = 0; x < 4; x++)
+        {
+            for (int y = 0; y < 4; y++)
+            {
+
+            }
+        }
         if (direction == 'w')
         {
-            int newTile = 0;
+            int newTileShape = 1;
             if ((int)tile.shape%4==3) // checks if adding 1 to the shape (with roration enum) courses the shape to change
             {
-                newTile = (int)tile.shape-3;
+                newTileShape = (int)tile.shape-3;
             }
             else // add 1 to the enum or 90 degrees to the shape 
             {
-                newTile = (int)tile.shape+1;
+                newTileShape = (int)tile.shape+1;
             }
-            tile.fillMap((Shape)newTile);
+            tile.fillMap((Shape)newTileShape);
         }
         else if (direction == 'a')
         {
@@ -174,6 +267,10 @@ public class Game
             {
                 if (tile.map[x, y] == 'X') //if there is a pice aka if it is not empty
                 {
+                    if (!(tile.X + x < fildWidth && tile.X + x >= 0 && tile.Y + y < fildHeigh && tile.Y + y >= 0)) // a out of bounce on an empty fild that can be skiped
+                    {
+                        continue;
+                    }
                     fild[tile.X + x, tile.Y + y] = tile.map[x, y]; //lets just hope that that works 
                 }
             }
