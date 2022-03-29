@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
+﻿// für die prokect arbeit grafic: https://stackoverflow.com/questions/4053837/colorizing-text-in-the-console-with-c
 readonly struct CollisionInfo // this struct is useless, but ey now it exists 
 {
     public readonly bool any;
@@ -20,6 +15,7 @@ readonly struct CollisionInfo // this struct is useless, but ey now it exists
 }
 public class Game
 {
+    private const int forceDwonConst = 5;
     private char[,] fild;
     private bool gameOver = false, stopInput = false, tileExists = false;
     private char input = ' ';
@@ -64,7 +60,7 @@ public class Game
                 tileExists = true;
             }
 
-            if (forceDownCounter > 4) // this should work 
+            if (forceDownCounter <= forceDwonConst) // this should work 
             {
                 input = 's';
                 forceDownCounter = 0;
@@ -99,14 +95,30 @@ public class Game
             }
 
             gameOver = checkLose();
-
+            //calculateCooldown();
             Display.update(fild);
             Thread.Sleep(cooldown);
         }
+        // post game
+        stopInput = true; // lets the thd thred suspent
     }
     private void setInPlace()
     {
         //to be added gives the tile in the fild array another char (for coloring later on), also no not move the tile in the doMove()
+        for (int x = 0; x < 4; x++)
+        {
+            for (int y = 0; y < 4; y++)
+            {
+                if (tile.X + x < fildWidth && tile.X + x >= 0 && tile.Y + y < fildHeigh && tile.Y + y >= 0) // another out of bounce check. i know that that is alot of code dupelication
+                {
+                    continue;
+                }
+                if (fild[tile.X+x,tile.Y+y] == 'X')
+                {
+                    fild[tile.X + x, tile.Y + y] = tile.endCharacter;
+                }
+            }
+        }
 
     }
     private void clearRowAndMoveAllOtherDown(int y)

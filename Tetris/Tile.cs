@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-public enum Shape
+﻿public enum Shape
 {
     I_0 = 0,
     I_90 = 1,
@@ -44,7 +38,7 @@ public enum Shape
 
 public class Tile
 {
-    public readonly char endCharacter;
+    public readonly char color;
     public int X;
     public int Y;
     private char[,] _map = new char[4, 4];
@@ -59,11 +53,11 @@ public class Tile
         this.Y = Y;
         this.shape = shape;
         fillMap(shape);
-        endCharacter = getEndCharacter(shape);
+        color = getEndCharacter(shape);
     }
-    private char getEndCharacter(Shape S)
+    private char getEndCharacter(Shape s)
     {
-        switch (S)
+        switch (s)
         {
             case Shape.I_0:
             case Shape.I_90:
@@ -95,6 +89,11 @@ public class Tile
             case Shape.T_180:
             case Shape.T_270:
                 return 'T';
+            case Shape.Z_0:
+            case Shape.Z_90:
+            case Shape.Z_180:
+            case Shape.Z_270:
+                return 'Z';
         }
         return '#';
     }
