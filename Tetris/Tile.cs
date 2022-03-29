@@ -38,7 +38,7 @@
 
 public class Tile
 {
-    public readonly char color;
+    public readonly char endCharacter;
     public int X;
     public int Y;
     private char[,] _map = new char[4, 4];
@@ -53,7 +53,7 @@ public class Tile
         this.Y = Y;
         this.shape = shape;
         fillMap(shape);
-        color = getEndCharacter(shape);
+        endCharacter = getEndCharacter(shape);
     }
     private char getEndCharacter(Shape s)
     {
