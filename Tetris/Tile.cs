@@ -44,6 +44,7 @@ public enum Shape
 
 public class Tile
 {
+    public readonly char endCharacter;
     public int X;
     public int Y;
     private char[,] _map = new char[4, 4];
@@ -58,6 +59,44 @@ public class Tile
         this.Y = Y;
         this.shape = shape;
         fillMap(shape);
+        endCharacter = getEndCharacter(shape);
+    }
+    private char getEndCharacter(Shape S)
+    {
+        switch (S)
+        {
+            case Shape.I_0:
+            case Shape.I_90:
+            case Shape.I_180:
+            case Shape.I_270:
+                return 'I';
+            case Shape.J_0:
+            case Shape.J_90:
+            case Shape.J_180:
+            case Shape.J_270:
+                return 'J';
+            case Shape.L_0:
+            case Shape.L_90:
+            case Shape.L_180:
+            case Shape.L_270:
+                return 'L';
+            case Shape.O_0:
+            case Shape.O_90:
+            case Shape.O_180:
+            case Shape.O_270:
+                return 'O';
+            case Shape.S_0:
+            case Shape.S_90:
+            case Shape.S_180:
+            case Shape.S_270:
+                return 'S';
+            case Shape.T_0:
+            case Shape.T_90:
+            case Shape.T_180:
+            case Shape.T_270:
+                return 'T';
+        }
+        return '#';
     }
     public void fillMap(Shape s)
     {

@@ -107,6 +107,7 @@ public class Game
     private void setInPlace()
     {
         //to be added gives the tile in the fild array another char (for coloring later on), also no not move the tile in the doMove()
+
     }
     private void clearRowAndMoveAllOtherDown(int y)
     {
