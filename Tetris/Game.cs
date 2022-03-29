@@ -37,7 +37,7 @@ public class Game
         tile = createNewTile();
         fild = new char[this.fildWidth,this.fildHeigh];
 
-        thd = new Thread(getInput);
+        thd = new Thread(getInputAsync);
         thd.Start();
         if (!thd.IsAlive)
         {
@@ -64,7 +64,7 @@ public class Game
                 tileExists = true;
             }
 
-            if (forceDownCounter > 2) // this should work 
+            if (forceDownCounter > 4) // this should work 
             {
                 input = 's';
                 forceDownCounter = 0;
@@ -72,11 +72,13 @@ public class Game
             move = collision(input);
             if (move.any)
             {
+                /*
                 if (move.horizontal||move.rotation) // maybe do something or maybe not -.-
                 {
                     //continue;
                 }
-                else if (move.vertical)
+                else*/ 
+                if (move.vertical)
                 {
                     for (int i = 0; i < 4; i++) //height of the fild array 
                     {
@@ -86,10 +88,9 @@ public class Game
                             clearRowAndMoveAllOtherDown(tile.Y + i);
                         }
                     }
-
                     // lock tile in place spawn new tile etc.
+                    setInPlace();
                     tileExists = false;
-
                 }
             }
             else
@@ -102,6 +103,10 @@ public class Game
             Display.update(fild);
             Thread.Sleep(cooldown);
         }
+    }
+    private void setInPlace()
+    {
+        //to be added gives the tile in the fild array another char (for coloring later on), also no not move the tile in the doMove()
     }
     private void clearRowAndMoveAllOtherDown(int y)
     {
@@ -120,6 +125,10 @@ public class Game
     }
     private bool checkFullRow(int y)
     {
+        if (!(y < fildWidth && y >= 0)) // out of bounce 
+        {
+            return false;
+        }
         for (int i = 0; i < fildWidth; i++)
         {
             if (fild[i,y]==' ')
@@ -131,6 +140,13 @@ public class Game
     }
     private bool checkLose()
     { 
+        for (int i = 0; i < fildWidth; i++)
+        {
+            if (fild[i,0] != ' ' && fild[i,0] != 'X') // tile on the upper bound of fild (locked in place)
+            {
+                return true;
+            }
+        }
         return false; 
     }
     private CollisionInfo collision(char direction) // this will work on the first time testing it without but please 
@@ -226,15 +242,24 @@ public class Game
     {
         return new(fildWidth / 2 + 2, 0, (Shape)(rand.Next(0, 7) * 4));
     }
-    private void doMove(char direction) // to be added: clear old postion
+    private void doMove(char direction) 
     {
+        // clear old one
         for (int x = 0; x < 4; x++)
         {
             for (int y = 0; y < 4; y++)
             {
-
+                if (!(tile.Y + y >= 0 && tile.Y + y < fildHeigh && tile.X +x < fildWidth && tile.X >= 0)) // out of bounce 
+                {
+                    continue;
+                }
+                if (fild[tile.X+x,tile.Y+y] == 'X')
+                {
+                    fild[tile.X + x, tile.Y + y] = ' ';
+                }
             }
         }
+        // set new position
         if (direction == 'w')
         {
             int newTileShape = 1;
@@ -276,7 +301,7 @@ public class Game
             }
         }
     }
-    private void getInput()
+    private void getInputAsync()
     {
         while (!stopInput)
         {
