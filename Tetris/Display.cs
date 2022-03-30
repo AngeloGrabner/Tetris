@@ -1,5 +1,6 @@
-﻿public static class Display // to be added
+﻿public static class Display // 90 degrees roration for some reason
 {
+    private static bool errorFlag = false;
     private static NewColors color = new();
     private static char fullBlock = '\u2588'; 
     private static char[,] s_input = new char[0,0];
@@ -7,15 +8,27 @@
     private static int width = 10*2+1, height = 20;
     static Display()
     {
+        Console.CursorVisible = false;
+        Console.OutputEncoding = System.Text.Encoding.Unicode;
         f = new CHAR_INFO[width*height];
         ColorSupport.setup(width,height);
+        if (width <= Console.LargestWindowWidth && height <= Console.LargestWindowHeight)
+        {
+            #pragma warning disable CA1416 // Plattformkompatibilität überprüfen
+            Console.WindowHeight = height;
+            Console.WindowWidth = width;
+            #pragma warning restore CA1416 // Plattformkompatibilität überprüfen
+        }
     }
 
     public static void update(char[,] input)
     {
         s_input = input;
         draw();
-        ColorSupport.displayFrame(f);
+        if (!errorFlag)
+        {
+            ColorSupport.displayFrame(f);
+        }
     }
     private static void draw()
     {
@@ -33,7 +46,7 @@
         {
             for (int y = 0; y < s_input.GetLength(1); y++)
             {
-                if (s_input[x,y] != ' ')
+                if (s_input[x,y] != ' ' && s_input[x,y] != '\n')
                 {
                     f[convert(x * 2, y)].UnicodeChar = fullBlock; //left side 
                     f[convert((x * 2) + 1, y)].UnicodeChar = fullBlock; // right side 
