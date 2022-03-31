@@ -1,47 +1,78 @@
 ﻿using System.Runtime.InteropServices;
+using System.Drawing;
 // just copied the code from https://github.com/AngeloGrabner/tictactoe-opp/blob/color/tictactoe-opp/ColorSupport.cs + a bit of color manipulation
+// win32error: 87 invalid argument (prob. on consolescreenbufferinfoex struct)
 public enum NewColors // we dont need more colors 9, are enough
 {
    black = 0,
-   yellow = 8,
+   yellow = 1,
    lightBlue = 2,
    red = 3,
    green = 4,
-   orange = 1,
-   pink = 11,
-   purple = 10,
+   orange = 5,
+   pink = 6,
+   purple = 7,
    white = 15
+}
+[StructLayout(LayoutKind.Sequential)]
+public struct COLORREF
+{
+    public uint ColorDWORD;
+
+    public COLORREF(Color color)
+    {
+        ColorDWORD = (uint)color.R + (((uint)color.G) << 8) + (((uint)color.B) << 16);
+    }
+    public COLORREF(uint color)
+    {
+        ColorDWORD = color;
+    }
+    public COLORREF(uint r, uint g, uint b)
+    {
+        ColorDWORD = r + (g << 8) + (b << 16);
+    }
+
+    internal Color GetColor()
+    {
+        return Color.FromArgb((int)(0x000000FFU & ColorDWORD),
+                              (int)(0x0000FF00U & ColorDWORD) >> 8, (int)(0x00FF0000U & ColorDWORD) >> 16);
+    }
+
+    internal void SetColor(Color color)
+    {
+        ColorDWORD = (uint)color.R + (((uint)color.G) << 8) + (((uint)color.B) << 16);
+    }
 }
 
 [StructLayout(LayoutKind.Sequential)]
 public struct CONSOLE_SCREEN_BUFFER_INFO_EX
 {
-    public uint cbSize;
+    public int cbSize ;
     public COORD dwSize;
     public COORD dwCursorPosition;
-    public short wAttributes;
+    public ushort wAttributes;
     public SMALL_RECT srWindow;
     public COORD dwMaximumWindowSize;
 
     public ushort wPopupAttributes;
     public bool bFullscreenSupported;
 
-    internal uint black; // hopfully works as a uint insteat of COLORREF
-    internal uint darkBlue;
-    internal uint darkGreen;
-    internal uint darkCyan;
-    internal uint darkRed;
-    internal uint darkMagenta;
-    internal uint darkYellow;
-    internal uint gray;
-    internal uint darkGray;
-    internal uint blue;
-    internal uint green;
-    internal uint cyan;
-    internal uint red;
-    internal uint magenta;
-    internal uint yellow;
-    internal uint white;
+    public COLORREF black;
+    public COLORREF darkBlue;
+    public COLORREF darkGreen;
+    public COLORREF darkCyan;
+    public COLORREF darkRed;
+    public COLORREF darkMagenta;
+    public COLORREF darkYellow;
+    public COLORREF gray;
+    public COLORREF darkGray;
+    public COLORREF blue;
+    public COLORREF green;
+    public COLORREF cyan;
+    public COLORREF red;
+    public COLORREF magenta;
+    public COLORREF yellow;
+    public COLORREF white;
 }
 public struct SMALL_RECT
 {
@@ -85,11 +116,13 @@ internal static class ColorSupport
     private static CONSOLE_SCREEN_BUFFER_INFO_EX conScreBufInfo; // great variable naming
     private static SMALL_RECT _small_rect;
     private static int _width = 0, _height = 0;
-    private const int outputHandle = -11;
-    private static IntPtr handle;
+    private const int genericWrite = -11;
+    private static IntPtr outputHandle;
+    private static bool errorFlag = false;
+    private static List<int> errors = new();
     static ColorSupport()
     {
-        handle = GetStdHandle(outputHandle);
+        outputHandle = GetStdHandle(genericWrite);
         conScreBufInfo = new CONSOLE_SCREEN_BUFFER_INFO_EX();
         changeColors();
     }
@@ -105,33 +138,50 @@ internal static class ColorSupport
     }
     public static void displayFrame(CHAR_INFO[] input)
     {
-        if (!WriteConsoleOutput(handle, input, new COORD((short)_width, (short)_height), new COORD(0, 0), ref _small_rect))
+        if (errorFlag)
         {
-            Console.WriteLine("Latest Win32Error: " + Marshal.GetLastWin32Error());
+            return;
+        }
+        if (!WriteConsoleOutput(outputHandle, input, new COORD((short)_width, (short)_height), new COORD(0, 0), ref _small_rect))
+        {
+            errorFlag = true;
+            errors.Add(Marshal.GetLastWin32Error());
+            Console.WriteLine("Latest Win32Error: " + errors[errors.Count-1]);
         }
     }
     private static void changeColors()
     {
-        if (GetConsoleScreenBufferInfoEx(handle, ref conScreBufInfo))
-        {
+        conScreBufInfo.cbSize = Marshal.SizeOf<CONSOLE_SCREEN_BUFFER_INFO_EX>(conScreBufInfo);
+        if (GetConsoleScreenBufferInfoEx(outputHandle, ref conScreBufInfo))
+        {        
             //we'll see how the RGB values look in the game!
-            conScreBufInfo.darkGray = 0x00FFFF00;     // yellow for O
-            conScreBufInfo.darkGreen = 0x0033DDFF;   // light blue for I
-            conScreBufInfo.darkCyan = 0x00FF0000;   // red for S
-            conScreBufInfo.darkRed = 0x0026E600;   // green for Z
-            conScreBufInfo.darkBlue = 0x00FFAA00; // orange for L
-            conScreBufInfo.cyan = 0x00FF00FF;    // pink for J
-            conScreBufInfo.green = 0x008800CC;  // purple for T
-            if (!SetConsoleScreenBufferInfoEx(handle, ref conScreBufInfo))
+            conScreBufInfo.darkBlue =  new(Color.Yellow); // yellow for O
+            conScreBufInfo.darkGreen = new(Color.SkyBlue); // light blue for I
+            conScreBufInfo.darkCyan = new(Color.Crimson);  // red for S
+            conScreBufInfo.darkRed = new(Color.LimeGreen);   // green for Z
+            conScreBufInfo.darkMagenta = new(Color.Orange); // orange for L
+            conScreBufInfo.darkYellow = new(Color.HotPink);  // pink for J
+            conScreBufInfo.gray = new(Color.Violet);  // purple for T
+            conScreBufInfo.cbSize = Marshal.SizeOf<CONSOLE_SCREEN_BUFFER_INFO_EX>(conScreBufInfo);
+            if (!SetConsoleScreenBufferInfoEx(outputHandle, ref conScreBufInfo))
             {
-                Console.WriteLine("error: " + Marshal.GetLastWin32Error());
+                errors.Add(Marshal.GetLastWin32Error());
+                Console.WriteLine("error: " + errors[errors.Count-1]);
             }
         }
         else
         {
-            Console.WriteLine("error: " + Marshal.GetLastWin32Error());
+            errors.Add(Marshal.GetLastWin32Error());
+            Console.WriteLine("error: " + errors[errors.Count-1]);
         }
     }
+    public static List<int> getAllErrors()
+    {
+        return errors;
+    }
+
+
+
 
 
     [DllImport("kernel32.dll", SetLastError = true)]

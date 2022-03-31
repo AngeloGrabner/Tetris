@@ -2,7 +2,7 @@
 {
     private static bool errorFlag = false;
     private static NewColors color = new();
-    private static char fullBlock = '\u2588'; 
+    private const char fullBlock = '\u2588'; 
     private static char[,] s_input = new char[0,0];
     private static CHAR_INFO[] f;
     private static int width = 10*2+1, height = 20;
@@ -28,6 +28,10 @@
         if (!errorFlag)
         {
             ColorSupport.displayFrame(f);
+        }
+        else
+        {
+            throw new Exception("Display error");
         }
     }
     private static void draw()

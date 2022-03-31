@@ -7,10 +7,10 @@ class Program
         //Game game = new();
         //game.run();
         char[,] chars = new char[,]
-                { {' ', 'X', ' ', ' ' },
-                  {' ', 'X', ' ', 'O' },
-                  {' ', 'X', ' ', ' ' },
-                  {' ', 'X', ' ', ' ' } };
+                { {'Z', 'X', 'L', ' ' },
+                  {'S', 'X', 'J', 'O' },
+                  {'T', 'X', ' ', ' ' },
+                  {'I', 'X', ' ', ' ' } };
 
         Display.update(chars);
         Console.ReadLine();
