@@ -1,18 +1,14 @@
 ﻿using System;
-
 class Program
 {
     static void Main()
     {
-        //Game game = new();
-        //game.run();
-        char[,] chars = new char[,]
-                { {'Z', 'X', 'L', ' ' },
-                  {'S', 'X', 'J', 'O' },
-                  {'T', 'X', ' ', ' ' },
-                  {'I', 'X', ' ', ' ' } };
-
-        Display.update(chars);
+        Game game = new();
+        game.run();
+        Console.WindowWidth = 120;
+        Console.WindowHeight = 30;
+        foreach (var element in game.debugInfo)
+            Console.WriteLine(element);
         Console.ReadLine();
     }
 }

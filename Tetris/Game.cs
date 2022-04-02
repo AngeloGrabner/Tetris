@@ -15,6 +15,7 @@ readonly struct CollisionInfo // this struct is useless, but ey now it exists
 }
 public class Game
 {
+    public List<string> debugInfo = new();
     private const int forceDwonConst = 5;
     private char[,] fild;
     private bool gameOver = false, stopInput = false, tileExists = false;
@@ -38,7 +39,7 @@ public class Game
         if (!thd.IsAlive)
         {
             errorFlag = 1;
-            return;
+            throw new Exception("thread is dead");
         }
         thd.IsBackground = true;
     }
@@ -49,18 +50,21 @@ public class Game
             Console.WriteLine("error: "+errorFlag);
             return;
         }
-
+        int count = 0;
         while (!gameOver)
         {
+            count++;
+            debugInfo.Add($"in run() interation: {count}");
             forceDownCounter++;
 
             if (!tileExists)
             {
-                tile = createNewTile();
+                tile = new(0,0,Shape.I_0);
+                //tile = createNewTile();
                 tileExists = true;
             }
 
-            if (forceDownCounter <= forceDwonConst) // this should work 
+            if (forceDownCounter == forceDwonConst) // this should work 
             {
                 input = 's';
                 forceDownCounter = 0;
@@ -97,19 +101,22 @@ public class Game
             gameOver = checkLose();
             //calculateCooldown();
             Display.update(fild);
+            //Console.ReadLine();
             Thread.Sleep(cooldown);
         }
         // post game
         stopInput = true; // lets the thd thred suspent
+        Console.Clear();
     }
     private void setInPlace()
     {
         //to be added gives the tile in the fild array another char (for coloring later on), also no not move the tile in the doMove()
+        debugInfo.Add("setInPlace called");
         for (int x = 0; x < 4; x++)
         {
             for (int y = 0; y < 4; y++)
             {
-                if (tile.X + x < fildWidth && tile.X + x >= 0 && tile.Y + y < fildHeigh && tile.Y + y >= 0) // another out of bounce check. i know that that is alot of code dupelication
+                if (!(tile.X + x < fildWidth && tile.X + x >= 0 && tile.Y + y < fildHeigh && tile.Y + y >= 0)) // another out of bounce check. i know that that is alot of code dupelication
                 {
                     continue;
                 }
@@ -123,6 +130,7 @@ public class Game
     }
     private void clearRowAndMoveAllOtherDown(int y)
     {
+        debugInfo.Add($"in clearRowAndMoveAllOtherDown() y level: {y}");
         for (int i = 0; i < fildWidth; i++)
         {
             fild[i, y] = ' ';
@@ -138,6 +146,7 @@ public class Game
     }
     private bool checkFullRow(int y)
     {
+        debugInfo.Add($"in checkFullRow() y level: {y}");
         if (!(y < fildWidth && y >= 0)) // out of bounce 
         {
             return false;
@@ -157,6 +166,7 @@ public class Game
         {
             if (fild[i,0] != ' ' && fild[i,0] != 'X') // tile on the upper bound of fild (locked in place)
             {
+                debugInfo.Add($"in checkLose() x: {i}, fild: '{fild[0,i]}'");
                 return true;
             }
         }
@@ -164,7 +174,7 @@ public class Game
     }
     private CollisionInfo collision(char direction) // this will work on the first time testing it without but please 
     {
-        
+        debugInfo.Add($"in collision() direction: {direction}");
         bool rotation = false, vertical = false, horizontal = false;
         if (direction == 'w') //rotation
         {
@@ -201,7 +211,7 @@ public class Game
             {
                 for (int y = 0; y < 4; y++)
                 {
-                    if (tile.X + x + move < fildWidth && tile.map[x, y] == 'X') //out of bounce check 
+                    if (tile.X + x + move < fildWidth && tile.Y + y < fildHeigh&& tile.map[x, y] == 'X') //out of bounce check 
                     {
                         if (fild[tile.X + x + move,tile.Y + y] != ' ') //collision check 
                         {
@@ -219,7 +229,7 @@ public class Game
             {
                 for (int y = 0; y < 4; y++)
                 {
-                    if (tile.X + x + move >= 0 && tile.map[x, y] == 'X') //out of bounce check 
+                    if (tile.X + x + move >= 0 && tile.Y + y < fildHeigh && tile.map[x, y] == 'X') //out of bounce check 
                     {
                         if (fild[tile.X + x + move, tile.Y + y] != ' ') //collision check 
                         {
@@ -237,7 +247,7 @@ public class Game
             {
                 for (int y = 0; y < 4; y++)
                 {
-                    if (tile.Y + y + move < fildHeigh && tile.map[x, y] == 'X') //out of bounce check 
+                    if (tile.Y + y + move < fildHeigh && tile.X + x < fildWidth && tile.map[x, y] == 'X') //out of bounce check 
                     {
                         if (fild[tile.X + x, tile.Y + y + move] != ' ') //collision check 
                         {
@@ -257,6 +267,7 @@ public class Game
     }
     private void doMove(char direction) 
     {
+        debugInfo.Add($"in doMove() direction: {direction}");
         // clear old one
         for (int x = 0; x < 4; x++)
         {
@@ -316,6 +327,7 @@ public class Game
     }
     private void getInputAsync()
     {
+        debugInfo.Add("in getInputAsyne()");
         while (!stopInput)
         {
             input = ' ';

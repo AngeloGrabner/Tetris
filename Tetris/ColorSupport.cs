@@ -11,7 +11,7 @@ public enum NewColors // we dont need more colors 9, are enough
    green = 4,
    orange = 5,
    pink = 6,
-   purple = 7,
+   purple = 8,
    white = 15
 }
 [StructLayout(LayoutKind.Sequential)]
@@ -161,7 +161,7 @@ internal static class ColorSupport
             conScreBufInfo.darkRed = new(Color.LimeGreen);   // green for Z
             conScreBufInfo.darkMagenta = new(Color.Orange); // orange for L
             conScreBufInfo.darkYellow = new(Color.HotPink);  // pink for J
-            conScreBufInfo.gray = new(Color.Violet);  // purple for T
+            conScreBufInfo.darkGray = new(Color.Violet);  // purple for T
             conScreBufInfo.cbSize = Marshal.SizeOf<CONSOLE_SCREEN_BUFFER_INFO_EX>(conScreBufInfo);
             if (!SetConsoleScreenBufferInfoEx(outputHandle, ref conScreBufInfo))
             {

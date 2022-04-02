@@ -5,7 +5,7 @@
     private const char fullBlock = '\u2588'; 
     private static char[,] s_input = new char[0,0];
     private static CHAR_INFO[] f;
-    private static int width = 10*2+1, height = 20;
+    private static int width = 10*2, height = 20;
     static Display()
     {
         Console.CursorVisible = false;
@@ -14,10 +14,10 @@
         ColorSupport.setup(width,height);
         if (width <= Console.LargestWindowWidth && height <= Console.LargestWindowHeight)
         {
-            #pragma warning disable CA1416 // Plattformkompatibilität überprüfen
+#pragma warning disable CA1416
             Console.WindowHeight = height;
             Console.WindowWidth = width;
-            #pragma warning restore CA1416 // Plattformkompatibilität überprüfen
+#pragma warning restore CA1416 
         }
     }
 
@@ -41,20 +41,21 @@
             f[i].UnicodeChar = ' ';
             f[i].Attributes = (ushort)ConsoleColor.White;
         }
-        for (int i = width-1;i<f.Length;i+=width)
-        {
-            f[i].UnicodeChar = '\n';
-        }
 
-        for (int x = 0; x < s_input.GetLength(0); x++)
+        //for (int i = width-1;i<f.Length;i+=width)
+        //{
+        //    f[i].UnicodeChar = '\n';
+        //}
+
+        for (int x = 0; x < s_input.GetLength(1); x++)
         {
-            for (int y = 0; y < s_input.GetLength(1); y++)
+            for (int y = 0; y < s_input.GetLength(0); y++)
             {
-                if (s_input[x,y] != ' ' && s_input[x,y] != '\n')
+                if (s_input[y,y] != ' ' && s_input[y,y] != '\n')
                 {
-                    f[convert(x * 2, y)].UnicodeChar = fullBlock; //left side 
-                    f[convert((x * 2) + 1, y)].UnicodeChar = fullBlock; // right side 
-                    switch (s_input[x,y])
+                    f[convert(y * 2, y)].UnicodeChar = fullBlock; //left side 
+                    f[convert((y * 2) + 1, y)].UnicodeChar = fullBlock; // right side 
+                    switch (s_input[y,y])
                     {
                         case 'I':
                             color = NewColors.lightBlue;
@@ -82,8 +83,12 @@
                             color = NewColors.white;
                             break;
                     }
-                    f[convert(x * 2, y)].Attributes = (ushort)color;
-                    f[convert((x * 2)+1, y)].Attributes = (ushort)color;
+                    f[convert(y * 2, y)].Attributes = (ushort)color;
+                    f[convert((y * 2)+1, y)].Attributes = (ushort)color;
+                    //for (int i = 0; i <= width; i++) // for debuging
+                    //{
+                    //    f[i].AsciiChar = Convert.ToChar(i % 10 + 48);
+                    //}
                 }
             }
         }
