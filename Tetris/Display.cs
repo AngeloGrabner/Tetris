@@ -47,15 +47,15 @@
         //    f[i].UnicodeChar = '\n';
         //}
 
-        for (int x = 0; x < s_input.GetLength(1); x++)
+        for (int x = 0; x < s_input.GetLength(0); x++)
         {
-            for (int y = 0; y < s_input.GetLength(0); y++)
+            for (int y = 0; y < s_input.GetLength(1); y++)
             {
-                if (s_input[y,y] != ' ' && s_input[y,y] != '\n')
+                if (s_input[x,y] != ' ' && s_input[x,y] != '\n')
                 {
-                    f[convert(y * 2, y)].UnicodeChar = fullBlock; //left side 
-                    f[convert((y * 2) + 1, y)].UnicodeChar = fullBlock; // right side 
-                    switch (s_input[y,y])
+                    f[convert(x * 2, y)].UnicodeChar = fullBlock; //left side 
+                    f[convert((x * 2) + 1, y)].UnicodeChar = fullBlock; // right side 
+                    switch (s_input[x,y])
                     {
                         case 'I':
                             color = NewColors.lightBlue;
@@ -83,8 +83,8 @@
                             color = NewColors.white;
                             break;
                     }
-                    f[convert(y * 2, y)].Attributes = (ushort)color;
-                    f[convert((y * 2)+1, y)].Attributes = (ushort)color;
+                    f[convert(x * 2, y)].Attributes = (ushort)color;
+                    f[convert((x * 2)+1, y)].Attributes = (ushort)color;
                     //for (int i = 0; i <= width; i++) // for debuging
                     //{
                     //    f[i].AsciiChar = Convert.ToChar(i % 10 + 48);

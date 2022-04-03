@@ -1,4 +1,6 @@
 ﻿// für die prokect arbeit grafic: https://stackoverflow.com/questions/4053837/colorizing-text-in-the-console-with-c
+
+//something with dispayling or moving ist working
 readonly struct CollisionInfo // this struct is useless, but ey now it exists 
 {
     public readonly bool any;
@@ -19,7 +21,7 @@ public class Game
     private const int forceDwonConst = 5;
     private char[,] fild;
     private bool gameOver = false, stopInput = false, tileExists = false;
-    private char input = ' ';
+    private char inputAsync = ' ', input = ' ';
     private int errorFlag = 0, cooldown = 1000, forceDownCounter = 0, score = 0, fildWidth, fildHeigh;
     public int ErrorFlag { get { return errorFlag; } }
     private Thread thd;
@@ -31,8 +33,15 @@ public class Game
         this.fildWidth = fildWidth;
         this.fildHeigh = fildHeigh;
         
-        tile = createNewTile();
+        tile = new(0,0,Shape.I_0); 
         fild = new char[this.fildWidth,this.fildHeigh];
+        for (int x = 0; x < fild.GetLength(0);x++)
+        {
+            for (int y = 0; y< fild.GetLength(1);y++)
+            {
+                fild[x, y] = ' ';
+            }
+        }
 
         thd = new Thread(getInputAsync);
         thd.Start();
@@ -53,9 +62,14 @@ public class Game
         int count = 0;
         while (!gameOver)
         {
+            input = inputAsync;
             count++;
             debugInfo.Add($"in run() interation: {count}");
             forceDownCounter++;
+            if (inputAsync == '\u001b')
+            {
+                break;
+            }
 
             if (!tileExists)
             {
@@ -160,8 +174,9 @@ public class Game
         }
         return true;
     }
-    private bool checkLose()
-    { 
+    private bool checkLose() 
+    {
+        debugInfo.Add("in checkLose()");
         for (int i = 0; i < fildWidth; i++)
         {
             if (fild[i,0] != ' ' && fild[i,0] != 'X') // tile on the upper bound of fild (locked in place)
@@ -219,6 +234,11 @@ public class Game
                             goto end;
                         }
                     }
+                    else
+                    {
+                        horizontal = true;
+                        goto end;
+                    }
                 }
             }
         }
@@ -236,6 +256,11 @@ public class Game
                             horizontal = true;
                             goto end;
                         }
+                    }
+                    else
+                    {
+                        horizontal = true;
+                        goto end;
                     }
                 }
             }
@@ -255,6 +280,11 @@ public class Game
                             goto end;
                         }
                     }
+                    else // if it is not a out of bounce and also not a x it goes here (thats not good) 
+                    {
+                        vertical = true;
+                        goto end;
+                    }
                 }
             }
         }
@@ -263,11 +293,17 @@ public class Game
     }
     private Tile createNewTile()
     {
+        debugInfo.Add("in reateNewTile()");
         return new(fildWidth / 2 + 2, 0, (Shape)(rand.Next(0, 7) * 4));
     }
     private void doMove(char direction) 
     {
         debugInfo.Add($"in doMove() direction: {direction}");
+
+        if (direction == ' ')
+        {
+            return;
+        }
         // clear old one
         for (int x = 0; x < 4; x++)
         {
@@ -330,13 +366,12 @@ public class Game
         debugInfo.Add("in getInputAsyne()");
         while (!stopInput)
         {
-            input = ' ';
             ConsoleKeyInfo temp = Console.ReadKey();
-            if (!(temp.KeyChar == 'w'||temp.KeyChar == 's'||temp.KeyChar=='a'||temp.KeyChar=='d'))
+            if (!(temp.KeyChar == 'w'||temp.KeyChar == 's'||temp.KeyChar=='a'||temp.KeyChar=='d'||temp.KeyChar == '\u001b'))
             {
                 continue;
             }
-            input = temp.KeyChar;
+            inputAsync = temp.KeyChar;
         }
     }
 }
