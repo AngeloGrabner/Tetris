@@ -1,4 +1,6 @@
 ﻿// für die prokect arbeit grafic: https://stackoverflow.com/questions/4053837/colorizing-text-in-the-console-with-c
+
+// fisrt 2-3 lines do not render and not work in logic. also some wired glich on the left side with peaces not disapiering corectly
 readonly struct CollisionInfo // this struct is useless, but ey now it exists 
 {
     public readonly bool any;
@@ -160,7 +162,6 @@ public class Game
     }
     private bool checkFullRow(int y)
     {
-        
         if (!(y < fildHeigh && y >= 0)) // out of bounce 
         {
             debugInfo.Add($"in checkFullRow() y level: {y}, False (1)");
@@ -168,7 +169,7 @@ public class Game
         }
         for (int i = 0; i < fildWidth; i++)
         {
-            if (fild[i,y]==' ')
+            if (fild[i, y] == ' ')
             {
                 debugInfo.Add($"in checkFullRow() y level: {y}, True");
                 return false;
@@ -210,7 +211,7 @@ public class Game
             {
                 for (int y = 0; y < 4; y++)
                 {
-                    if (testTile.X + x < fildWidth && testTile.X + x >= 0 && testTile.Y + y < fildHeigh && testTile.Y + y >= 0) // checks for a out of bounce
+                    if (outOfBounceCheck(testTile.X + x,  testTile.Y + y)) 
                     {
                         if (fild[testTile.X + x, testTile.Y + y] != ' ' && fild[testTile.X + x, testTile.Y + y] != 'X' && testTile.map[x, y] == 'X') // collision occoured
                         {
@@ -233,7 +234,7 @@ public class Game
             {
                 for (int y = 0; y < 4; y++)
                 {
-                    if (tile.X + x + move < fildWidth && tile.Y + y < fildHeigh) //out of bounce check 
+                    if (outOfBounceCheck(tile.X + x + move, tile.Y + y)) 
                     {
                         if (fild[tile.X + x + move,tile.Y + y] != ' ' && fild[tile.X + x + move, tile.Y + y] != 'X' && tile.map[x, y] == 'X') //collision check 
                         {
@@ -256,7 +257,7 @@ public class Game
             {
                 for (int y = 0; y < 4; y++)
                 {
-                    if (tile.X + x + move >= 0 && tile.Y + y < fildHeigh) //out of bounce check 
+                    if (outOfBounceCheck(tile.X + x + move, tile.Y + y)) 
                     {
                         if (fild[tile.X + x + move, tile.Y + y] != ' '  && fild[tile.X + x + move, tile.Y + y] != 'X' && tile.map[x, y] == 'X') //collision check 
                         {
@@ -279,7 +280,7 @@ public class Game
             {
                 for (int y = 0; y < 4; y++)
                 {
-                    if (tile.Y + y + move < fildHeigh && tile.X + x < fildWidth) //out of bounce check 
+                    if (outOfBounceCheck(tile.X + x, tile.Y + y + move)) 
                     {
                         if (fild[tile.X + x, tile.Y + y + move] != ' ' && fild[tile.X + x, tile.Y + y + move] != 'X' && tile.map[x, y] == 'X') //collision check 
                         {
@@ -299,10 +300,14 @@ public class Game
         debugInfo.Add($"in collision() direction: {direction}, h: {horizontal}, v: {vertical}, r: {rotation}");
         return new CollisionInfo(horizontal,vertical,rotation);
     }
+    private bool outOfBounceCheck(int x, int y)
+    {
+        return x < fildWidth && x >= 0 && y < fildHeigh && y >= 0;
+    }
     private Tile createNewTile()
     {
         debugInfo.Add("in reateNewTile()");
-        return new(fildWidth / 2 + 2, 0, (Shape)(rand.Next(0, 7) * 4));
+        return new(fildWidth / 2 - 2, 0, (Shape)(rand.Next(0, 7) * 4));
     }
     private void doMove(char direction) 
     {
@@ -340,6 +345,7 @@ public class Game
                 newTileShape = (int)tile.shape+1;
             }
             tile.fillMap((Shape)newTileShape);
+            tile.shape = (Shape)newTileShape;
         }
         else if (direction == 'a')
         {
