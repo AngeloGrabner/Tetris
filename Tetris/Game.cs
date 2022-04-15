@@ -1,6 +1,4 @@
 ﻿// für die prokect arbeit grafic: https://stackoverflow.com/questions/4053837/colorizing-text-in-the-console-with-c
-
-//something with dispayling or moving ist working
 readonly struct CollisionInfo // this struct is useless, but ey now it exists 
 {
     public readonly bool any;
@@ -20,9 +18,9 @@ public class Game
     public List<string> debugInfo = new();
     private const int forceDwonConst = 5;
     private char[,] fild;
-    private bool gameOver = false, stopInput = false, tileExists = false;
+    private bool gameOver = false, stopInput = false, tileExists = false, newInputkeyFlag = true;
     private char inputAsync = ' ', input = ' ';
-    private int errorFlag = 0, cooldown = 1000, forceDownCounter = 0, score = 0, fildWidth, fildHeigh;
+    private int errorFlag = 0, cooldown = 100, forceDownCounter = 0, score = 0, fildWidth, fildHeigh;
     public int ErrorFlag { get { return errorFlag; } }
     private Thread thd;
     private CollisionInfo move;
@@ -60,21 +58,23 @@ public class Game
             return;
         }
         int count = 0;
+        bool currentInputKeyFlag = newInputkeyFlag;
         while (!gameOver)
         {
-            input = inputAsync;
+            input = getInput();
+
             count++;
             debugInfo.Add($"in run() interation: {count}");
             forceDownCounter++;
-            if (inputAsync == '\u001b')
+            if (inputAsync == '\u001b') // ESC key
             {
                 break;
             }
 
             if (!tileExists)
             {
-                tile = new(0,0,Shape.I_0);
-                //tile = createNewTile();
+                //tile = new(0,0,Shape.I_0);
+                tile = createNewTile();
                 tileExists = true;
             }
 
@@ -160,18 +160,21 @@ public class Game
     }
     private bool checkFullRow(int y)
     {
-        debugInfo.Add($"in checkFullRow() y level: {y}");
-        if (!(y < fildWidth && y >= 0)) // out of bounce 
+        
+        if (!(y < fildHeigh && y >= 0)) // out of bounce 
         {
+            debugInfo.Add($"in checkFullRow() y level: {y}, False (1)");
             return false;
         }
         for (int i = 0; i < fildWidth; i++)
         {
             if (fild[i,y]==' ')
             {
+                debugInfo.Add($"in checkFullRow() y level: {y}, True");
                 return false;
             }
         }
+        debugInfo.Add($"in checkFullRow() y level: {y}, False (2)");
         return true;
     }
     private bool checkLose() 
@@ -187,9 +190,8 @@ public class Game
         }
         return false; 
     }
-    private CollisionInfo collision(char direction) // this will work on the first time testing it without but please 
+    private CollisionInfo collision(char direction) // sometimes a out of bounce can happen (to be fixed)
     {
-        debugInfo.Add($"in collision() direction: {direction}");
         bool rotation = false, vertical = false, horizontal = false;
         if (direction == 'w') //rotation
         {
@@ -208,14 +210,19 @@ public class Game
             {
                 for (int y = 0; y < 4; y++)
                 {
-                    if (testTile.X + x < fildWidth && testTile.X + x >= 0 && testTile.Y + y < fildHeigh && testTile.Y + y >= 0 && testTile.map[x, y] == 'X') // checks for a out of bounce
+                    if (testTile.X + x < fildWidth && testTile.X + x >= 0 && testTile.Y + y < fildHeigh && testTile.Y + y >= 0) // checks for a out of bounce
                     {
-                        if (fild[testTile.X + x, testTile.Y + y] != ' ' && testTile.map[x, y] == 'X') // collision occoured
+                        if (fild[testTile.X + x, testTile.Y + y] != ' ' && fild[testTile.X + x, testTile.Y + y] != 'X' && testTile.map[x, y] == 'X') // collision occoured
                         {
                             rotation = true;
                             goto end;
                         }
-                    } 
+                    }
+                    else if (testTile.map[x, y] == 'X')
+                    {
+                        rotation = true;
+                        goto end;
+                    }
                 }
             }
         }
@@ -226,15 +233,15 @@ public class Game
             {
                 for (int y = 0; y < 4; y++)
                 {
-                    if (tile.X + x + move < fildWidth && tile.Y + y < fildHeigh&& tile.map[x, y] == 'X') //out of bounce check 
+                    if (tile.X + x + move < fildWidth && tile.Y + y < fildHeigh) //out of bounce check 
                     {
-                        if (fild[tile.X + x + move,tile.Y + y] != ' ') //collision check 
+                        if (fild[tile.X + x + move,tile.Y + y] != ' ' && fild[tile.X + x + move, tile.Y + y] != 'X' && tile.map[x, y] == 'X') //collision check 
                         {
                             horizontal = true;
                             goto end;
                         }
                     }
-                    else
+                    else if (tile.map[x, y] == 'X')
                     {
                         horizontal = true;
                         goto end;
@@ -249,15 +256,15 @@ public class Game
             {
                 for (int y = 0; y < 4; y++)
                 {
-                    if (tile.X + x + move >= 0 && tile.Y + y < fildHeigh && tile.map[x, y] == 'X') //out of bounce check 
+                    if (tile.X + x + move >= 0 && tile.Y + y < fildHeigh) //out of bounce check 
                     {
-                        if (fild[tile.X + x + move, tile.Y + y] != ' ') //collision check 
+                        if (fild[tile.X + x + move, tile.Y + y] != ' '  && fild[tile.X + x + move, tile.Y + y] != 'X' && tile.map[x, y] == 'X') //collision check 
                         {
                             horizontal = true;
                             goto end;
                         }
                     }
-                    else
+                    else if (tile.map[x, y] == 'X')
                     {
                         horizontal = true;
                         goto end;
@@ -272,15 +279,15 @@ public class Game
             {
                 for (int y = 0; y < 4; y++)
                 {
-                    if (tile.Y + y + move < fildHeigh && tile.X + x < fildWidth && tile.map[x, y] == 'X') //out of bounce check 
+                    if (tile.Y + y + move < fildHeigh && tile.X + x < fildWidth) //out of bounce check 
                     {
-                        if (fild[tile.X + x, tile.Y + y + move] != ' ') //collision check 
+                        if (fild[tile.X + x, tile.Y + y + move] != ' ' && fild[tile.X + x, tile.Y + y + move] != 'X' && tile.map[x, y] == 'X') //collision check 
                         {
                             vertical = true;
                             goto end;
                         }
                     }
-                    else // if it is not a out of bounce and also not a x it goes here (thats not good) 
+                    else if (tile.map[x, y] == 'X') // not optimal 
                     {
                         vertical = true;
                         goto end;
@@ -289,6 +296,7 @@ public class Game
             }
         }
         end:
+        debugInfo.Add($"in collision() direction: {direction}, h: {horizontal}, v: {vertical}, r: {rotation}");
         return new CollisionInfo(horizontal,vertical,rotation);
     }
     private Tile createNewTile()
@@ -352,27 +360,33 @@ public class Game
             {
                 if (tile.map[x, y] == 'X') //if there is a pice aka if it is not empty
                 {
-                    if (!(tile.X + x < fildWidth && tile.X + x >= 0 && tile.Y + y < fildHeigh && tile.Y + y >= 0)) // a out of bounce on an empty fild that can be skiped
+                    if (tile.X + x < fildWidth && tile.X + x >= 0 && tile.Y + y < fildHeigh && tile.Y + y >= 0) // a out of bounce on an empty fild that can be skiped
                     {
-                        continue;
+                        fild[tile.X + x, tile.Y + y] = tile.map[x, y]; //lets just hope that that works 
                     }
-                    fild[tile.X + x, tile.Y + y] = tile.map[x, y]; //lets just hope that that works 
                 }
             }
         }
     }
-    private void getInputAsync()
+    private char getInput()
+    {
+        if (newInputkeyFlag)
+        {
+            newInputkeyFlag = false;
+            if (inputAsync == 'w' || inputAsync == 's' || inputAsync == 'a' || inputAsync == 'd' || inputAsync == '\u001b')
+            {
+                return inputAsync;
+            }
+        }
+        return ' ';
+    }
+    private void getInputAsync() // this one will be in another thread
     {
         debugInfo.Add("in getInputAsyne()");
         while (!stopInput)
         {
-            ConsoleKeyInfo temp = Console.ReadKey();
-            if (!(temp.KeyChar == 'w'||temp.KeyChar == 's'||temp.KeyChar=='a'||temp.KeyChar=='d'||temp.KeyChar == '\u001b'))
-            {
-                continue;
-            }
-            inputAsync = temp.KeyChar;
+            inputAsync = Console.ReadKey().KeyChar;
+            newInputkeyFlag = true;
         }
     }
 }
-
