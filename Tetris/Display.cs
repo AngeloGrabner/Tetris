@@ -5,18 +5,17 @@
     private const char fullBlock = '\u2588'; 
     private static char[,] s_input = new char[0,0];
     private static CHAR_INFO[] f;
-    private static int width = 10*2, height = 20;
+    private static int width = 10, height = 20;
     static Display()
     {
         Console.CursorVisible = false;
         Console.OutputEncoding = System.Text.Encoding.Unicode;
         f = new CHAR_INFO[width*height];
-        ColorSupport.setup(width,height);
        setup(width,height);
     }
     public static void setup(int Width, int Height)
     {
-        width = Width; 
+        width = Width*2; 
         height = Height;
         if (width <= Console.LargestWindowWidth && height <= Console.LargestWindowHeight)
         {
@@ -24,6 +23,8 @@
             Console.WindowHeight = height;
             Console.WindowWidth = width;
 #pragma warning restore CA1416 
+            f = new CHAR_INFO[width * height];
+            ColorSupport.setup(width, height);
         }
         else
         {

@@ -115,7 +115,7 @@ internal static class ColorSupport
 {
     private static CONSOLE_SCREEN_BUFFER_INFO_EX conScreBufInfo; // great variable naming
     private static SMALL_RECT _small_rect;
-    private static int _width = 0, _height = 0;
+    private static int _width = 20, _height = 10;
     private const int genericWrite = -11;
     private static IntPtr outputHandle;
     private static bool errorFlag = false;
@@ -124,13 +124,14 @@ internal static class ColorSupport
     {
         outputHandle = GetStdHandle(genericWrite);
         conScreBufInfo = new CONSOLE_SCREEN_BUFFER_INFO_EX();
+        setup(_width,_height);
         changeColors();
     }
     public static void setup(int width, int height) // width and height of the buffer thats going to be displaied
     {
         _width = width;
         _height = height;
-        if (!(width > 0 && height > 0))
+        if (width <= 0 || height <= 0)
         {
             throw new ArgumentException("width and/or height must me grater 0");
         }

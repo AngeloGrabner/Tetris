@@ -3,7 +3,7 @@ class Program
 {
     static void Main()
     {
-        Game game = new();
+        Game game = new(20,20);
         game.run();
 #pragma warning disable CA1416
         Console.WindowWidth = 120;
