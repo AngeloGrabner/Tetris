@@ -1,4 +1,4 @@
-﻿public static class Display // 90 degrees roration for some reason
+﻿public static class Display 
 {
     private static bool errorFlag = false;
     private static NewColors color = new();
@@ -12,6 +12,12 @@
         Console.OutputEncoding = System.Text.Encoding.Unicode;
         f = new CHAR_INFO[width*height];
         ColorSupport.setup(width,height);
+       setup(width,height);
+    }
+    public static void setup(int Width, int Height)
+    {
+        width = Width*2; 
+        height = Height;
         if (width <= Console.LargestWindowWidth && height <= Console.LargestWindowHeight)
         {
 #pragma warning disable CA1416
@@ -19,8 +25,11 @@
             Console.WindowWidth = width;
 #pragma warning restore CA1416 
         }
+        else
+        {
+            throw new ArgumentException("Width and or Height paramenter incorrect");
+        }
     }
-
     public static void update(char[,] input)
     {
         s_input = input;

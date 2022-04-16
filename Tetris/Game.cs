@@ -1,7 +1,4 @@
-﻿// für die prokect arbeit grafic: https://stackoverflow.com/questions/4053837/colorizing-text-in-the-console-with-c
-
-// fisrt 2-3 lines do not render and not work in logic. also some wired glich on the left side with peaces not disapiering corectly
-readonly struct CollisionInfo // this struct is useless, but ey now it exists 
+﻿readonly struct CollisionInfo // this struct is useless, but ey now it exists 
 {
     public readonly bool any;
     public readonly bool horizontal; //collosion on x 
@@ -18,12 +15,13 @@ readonly struct CollisionInfo // this struct is useless, but ey now it exists
 public class Game
 {
     public List<string> debugInfo = new();
-    private const int forceDwonConst = 5;
+    private const int forceDwonConst = 3;
     private char[,] fild;
     private bool gameOver = false, stopInput = false, tileExists = false, newInputkeyFlag = true;
     private char inputAsync = ' ', input = ' ';
-    private int errorFlag = 0, cooldown = 100, forceDownCounter = 0, score = 0, fildWidth, fildHeigh;
+    private int errorFlag = 0, cooldown = 500, forceDownCounter = 0, score = 0, fildWidth, fildHeigh;
     public int ErrorFlag { get { return errorFlag; } }
+    public int Score { get { return score; } }
     private Thread thd;
     private CollisionInfo move;
     private Tile tile;
@@ -32,7 +30,8 @@ public class Game
     {
         this.fildWidth = fildWidth;
         this.fildHeigh = fildHeigh;
-        
+
+        //Display.setup(fildWidth, fildHeigh); work in progress
         tile = new(0,0,Shape.I_0); 
         fild = new char[this.fildWidth,this.fildHeigh];
         for (int x = 0; x < fild.GetLength(0);x++)
@@ -66,7 +65,9 @@ public class Game
             input = getInput();
 
             count++;
+#if DEBUG
             debugInfo.Add($"in run() interation: {count}");
+#endif
             forceDownCounter++;
             if (inputAsync == '\u001b') // ESC key
             {
@@ -86,36 +87,26 @@ public class Game
                 forceDownCounter = 0;
             }
             move = collision(input);
-            if (move.any)
+            if (move.vertical)
             {
-                /*
-                if (move.horizontal||move.rotation) // maybe do something or maybe not -.-
+                for (int i = 0; i < 4; i++) //height of the fild array 
                 {
-                    //continue;
-                }
-                else*/ 
-                if (move.vertical)
-                {
-                    for (int i = 0; i < 4; i++) //height of the fild array 
+                    if (checkFullRow(tile.Y + i)) // check for any full rows 
                     {
-                        if (checkFullRow(tile.Y+i)) // check for any full rows 
-                        {
-                            score++;
-                            clearRowAndMoveAllOtherDown(tile.Y + i);
-                        }
+                        calculateCooldown(++score);
+                        clearRowAndMoveAllOtherDown(tile.Y + i);
                     }
-                    // lock tile in place spawn new tile etc.
-                    setInPlace();
-                    tileExists = false;
                 }
+                // lock tile in place spawn new tile etc.
+                setInPlace();
+                tileExists = false;
             }
-            else
+            else if (!(move.rotation || move.horizontal))
             {
                 doMove(input);
             }
 
             gameOver = checkLose();
-            //calculateCooldown();
             Display.update(fild);
             //Console.ReadLine();
             Thread.Sleep(cooldown);
@@ -124,10 +115,19 @@ public class Game
         stopInput = true; // lets the thd thred suspent
         Console.Clear();
     }
+    private void calculateCooldown(int gameScore)
+    {
+        cooldown = cooldown - (gameScore*gameScore);
+        if (cooldown < 0)
+        {
+            cooldown = 0;
+        }
+    }
     private void setInPlace()
     {
-        //to be added gives the tile in the fild array another char (for coloring later on), also no not move the tile in the doMove()
+#if DEBUG
         debugInfo.Add("setInPlace called");
+#endif
         for (int x = 0; x < 4; x++)
         {
             for (int y = 0; y < 4; y++)
@@ -146,7 +146,9 @@ public class Game
     }
     private void clearRowAndMoveAllOtherDown(int y)
     {
+#if DEBUG
         debugInfo.Add($"in clearRowAndMoveAllOtherDown() y level: {y}");
+#endif
         for (int i = 0; i < fildWidth; i++)
         {
             fild[i, y] = ' ';
@@ -164,28 +166,38 @@ public class Game
     {
         if (!(y < fildHeigh && y >= 0)) // out of bounce 
         {
+#if DEBUG
             debugInfo.Add($"in checkFullRow() y level: {y}, False (1)");
+#endif
             return false;
         }
         for (int i = 0; i < fildWidth; i++)
         {
             if (fild[i, y] == ' ')
             {
+#if DEBUG
                 debugInfo.Add($"in checkFullRow() y level: {y}, True");
+#endif
                 return false;
             }
         }
+#if DEBUG
         debugInfo.Add($"in checkFullRow() y level: {y}, False (2)");
+#endif
         return true;
     }
     private bool checkLose() 
     {
+#if DEBUG
         debugInfo.Add("in checkLose()");
+#endif
         for (int i = 0; i < fildWidth; i++)
         {
             if (fild[i,0] != ' ' && fild[i,0] != 'X') // tile on the upper bound of fild (locked in place)
             {
+#if DEBUG
                 debugInfo.Add($"in checkLose() x: {i}, fild: '{fild[0,i]}'");
+#endif
                 return true;
             }
         }
@@ -196,7 +208,7 @@ public class Game
         bool rotation = false, vertical = false, horizontal = false;
         if (direction == 'w') //rotation
         {
-            Tile testTile = tile;
+            Tile testTile = new(tile.X,tile.Y,tile.shape);
             int newTileShape = 0;
             if ((int)tile.shape % 4 == 3) // checks if adding 1 to the shape (with roration enum) courses the shape to change
             {
@@ -296,8 +308,10 @@ public class Game
                 }
             }
         }
-        end:
+    end:
+#if DEBUG
         debugInfo.Add($"in collision() direction: {direction}, h: {horizontal}, v: {vertical}, r: {rotation}");
+#endif
         return new CollisionInfo(horizontal,vertical,rotation);
     }
     private bool outOfBounceCheck(int x, int y)
@@ -306,13 +320,16 @@ public class Game
     }
     private Tile createNewTile()
     {
+#if DEBUG
         debugInfo.Add("in reateNewTile()");
-        return new(fildWidth / 2 - 2, 0, (Shape)(rand.Next(0, 7) * 4));
+#endif
+        return new(fildWidth / 2 - 2, -2, (Shape)(rand.Next(0, 7) * 4));
     }
     private void doMove(char direction) 
     {
+#if DEBUG
         debugInfo.Add($"in doMove() direction: {direction}");
-
+#endif
         if (direction == ' ')
         {
             return;
@@ -322,13 +339,12 @@ public class Game
         {
             for (int y = 0; y < 4; y++)
             {
-                if (!(tile.Y + y >= 0 && tile.Y + y < fildHeigh && tile.X +x < fildWidth && tile.X >= 0)) // out of bounce 
+                if (outOfBounceCheck(tile.X + x, tile.Y + y)) 
                 {
-                    continue;
-                }
-                if (fild[tile.X+x,tile.Y+y] == 'X')
-                {
-                    fild[tile.X + x, tile.Y + y] = ' ';
+                    if (fild[tile.X + x, tile.Y + y] == 'X')
+                    {
+                        fild[tile.X + x, tile.Y + y] = ' ';
+                    }
                 }
             }
         }
@@ -366,7 +382,7 @@ public class Game
             {
                 if (tile.map[x, y] == 'X') //if there is a pice aka if it is not empty
                 {
-                    if (tile.X + x < fildWidth && tile.X + x >= 0 && tile.Y + y < fildHeigh && tile.Y + y >= 0) // a out of bounce on an empty fild that can be skiped
+                    if (outOfBounceCheck(tile.X + x, tile.Y + y))
                     {
                         fild[tile.X + x, tile.Y + y] = tile.map[x, y]; //lets just hope that that works 
                     }
@@ -388,7 +404,9 @@ public class Game
     }
     private void getInputAsync() // this one will be in another thread
     {
+#if DEBUG
         debugInfo.Add("in getInputAsyne()");
+#endif
         while (!stopInput)
         {
             inputAsync = Console.ReadKey().KeyChar;
