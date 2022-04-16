@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-readonly struct CollisionInfo
+﻿readonly struct CollisionInfo // this struct is useless, but ey now it exists 
 {
     public readonly bool any;
     public readonly bool horizontal; //collosion on x 
@@ -20,28 +14,40 @@ readonly struct CollisionInfo
 }
 public class Game
 {
+    public List<string> debugInfo = new();
+    private const int forceDwonConst = 3;
     private char[,] fild;
-    private bool gameOver = false, stopInput = false, tileExists = false;
-    private char input = ' ';
-    private int errorFlag = 0, cooldown = 1000, forceDownCounter = 0, score = 0, fildWidth, fildHeigh;
+    private bool gameOver = false, stopInput = false, tileExists = false, newInputkeyFlag = true;
+    private char inputAsync = ' ', input = ' ';
+    private int errorFlag = 0, cooldown = 500, forceDownCounter = 0, score = 0, fildWidth, fildHeigh;
+    public int ErrorFlag { get { return errorFlag; } }
+    public int Score { get { return score; } }
     private Thread thd;
     private CollisionInfo move;
     private Tile tile;
     private Random rand = new Random();
-    public Game(int fildWidth = 10, int fildHeigh = 20)
+    public Game(int fildWidth = 10, int fildHeigh = 20) 
     {
         this.fildWidth = fildWidth;
         this.fildHeigh = fildHeigh;
-        
-        tile = createNewTile();
-        fild = new char[this.fildWidth,this.fildHeigh];
 
-        thd = new Thread(getInput);
+        Display.setup(fildWidth, fildHeigh); 
+        tile = new(0,0,Shape.I_0); 
+        fild = new char[this.fildWidth,this.fildHeigh];
+        for (int x = 0; x < fild.GetLength(0);x++)
+        {
+            for (int y = 0; y< fild.GetLength(1);y++)
+            {
+                fild[x, y] = ' ';
+            }
+        }
+
+        thd = new Thread(getInputAsync);
         thd.Start();
         if (!thd.IsAlive)
         {
             errorFlag = 1;
-            return;
+            throw new Exception("thread is dead");
         }
         thd.IsBackground = true;
     }
@@ -52,58 +58,92 @@ public class Game
             Console.WriteLine("error: "+errorFlag);
             return;
         }
-
+        int count = 0;
+        bool currentInputKeyFlag = newInputkeyFlag;
         while (!gameOver)
         {
+            input = getInput();
+
+            count++;
+#if DEBUG
+            debugInfo.Add($"in run() interation: {count}");
+#endif
             forceDownCounter++;
+            if (inputAsync == '\u001b') // ESC key
+            {
+                break;
+            }
 
             if (!tileExists)
             {
+                //tile = new(0,0,Shape.I_0);
                 tile = createNewTile();
                 tileExists = true;
             }
 
-            if (forceDownCounter > 2) // this should work 
+            if (forceDownCounter == forceDwonConst) // this should work 
             {
                 input = 's';
                 forceDownCounter = 0;
             }
             move = collision(input);
-            if (move.any) // if statment can be simplefied
+            if (move.vertical)
             {
-                if (move.horizontal||move.rotation) // maybe do something or maybe not -.-
+                for (int i = 0; i < 4; i++) //height of the fild array 
                 {
-                    //continue;
-                }
-                else if (move.vertical)
-                {
-                    // lock tile in place spawn new tile etc.
-                    finalMove();
-                    for (int i = 0; i < 4; i++) //height of the fild array 
+                    if (checkFullRow(tile.Y + i)) // check for any full rows 
                     {
-                        if (!(tile.Y+i < fildWidth && tile.Y+i >= 0)) // a out of bounce protection
-                        {
-                            continue;
-                        }
-                        else if (checkFullRow(tile.Y+i)) // check for any full rows on 
-                        {
-                            score++;
-                            clearRowAndMoveAllOtherDown(tile.Y + i);
-                        }
-                    }              
-                    tileExists = false;
+                        calculateCooldown(++score);
+                        clearRowAndMoveAllOtherDown(tile.Y + i);
+                    }
+
                 }
+                // lock tile in place spawn new tile etc.
+                setInPlace();
+                tileExists = false;
             }
-            else
+            else if (!(move.rotation || move.horizontal))
             {
                 doMove(input);
             }
 
             gameOver = checkLose();
-
             Display.update(fild);
+            //Console.ReadLine();
             Thread.Sleep(cooldown);
         }
+        // post game
+        stopInput = true; // lets the thd thred suspent
+        Console.Clear();
+    }
+    private void calculateCooldown(int gameScore)
+    {
+        cooldown = cooldown - (gameScore*gameScore);
+        if (cooldown < 0)
+        {
+            cooldown = 0;
+        }
+    }
+    private void setInPlace()
+    {
+#if DEBUG
+        debugInfo.Add("setInPlace called");
+#endif
+        for (int x = 0; x < 4; x++)
+        {
+            for (int y = 0; y < 4; y++)
+            {
+                if (!(tile.X + x < fildWidth && tile.X + x >= 0 && tile.Y + y < fildHeigh && tile.Y + y >= 0)) // another out of bounce check. i know that that is alot of code dupelication
+                {
+                    continue;
+                }
+                if (fild[tile.X+x,tile.Y+y] == 'X')
+                {
+                    fild[tile.X + x, tile.Y + y] = tile.endCharacter;
+                }
+            }
+        }
+
     }
     private void setFinalPosition() // not to sure about that 
     {
@@ -111,6 +151,9 @@ public class Game
     }
     private void clearRowAndMoveAllOtherDown(int y)
     {
+#if DEBUG
+        debugInfo.Add($"in clearRowAndMoveAllOtherDown() y level: {y}");
+#endif
         for (int i = 0; i < fildWidth; i++)
         {
             fild[i, y] = ' ';
@@ -126,41 +169,204 @@ public class Game
     }
     private bool checkFullRow(int y)
     {
+        if (!(y < fildHeigh && y >= 0)) // out of bounce 
+        {
+#if DEBUG
+            debugInfo.Add($"in checkFullRow() y level: {y}, False (1)");
+#endif
+            return false;
+        }
         for (int i = 0; i < fildWidth; i++)
         {
-            if (fild[i,y]==' ')
+            if (fild[i, y] == ' ')
             {
+#if DEBUG
+                debugInfo.Add($"in checkFullRow() y level: {y}, True");
+#endif
                 return false;
             }
         }
+#if DEBUG
+        debugInfo.Add($"in checkFullRow() y level: {y}, False (2)");
+#endif
         return true;
     }
-    private bool checkLose()
-    { 
+    private bool checkLose() 
+    {
+#if DEBUG
+        debugInfo.Add("in checkLose()");
+#endif
+        for (int i = 0; i < fildWidth; i++)
+        {
+            if (fild[i,0] != ' ' && fild[i,0] != 'X') // tile on the upper bound of fild (locked in place)
+            {
+#if DEBUG
+                debugInfo.Add($"in checkLose() x: {i}, fild: '{fild[0,i]}'");
+#endif
+                return true;
+            }
+        }
         return false; 
     }
-    private CollisionInfo collision(char direction) // checks if the move will collide with anything 
+    private CollisionInfo collision(char direction) // sometimes a out of bounce can happen (to be fixed)
     {
-        return new (false,false,false);
-    }
-    private Tile createNewTile()
-    {
-        return new(fildWidth / 2 + 2, 0, (Shape)(rand.Next(0, 7) * 4));
-    }
-    private void doMove(char direction) 
-    {
-        if (direction == 'w')
+        bool rotation = false, vertical = false, horizontal = false;
+        if (direction == 'w') //rotation
         {
-            int newTile = 0;
-            if ((int)tile.shape%4==3) // checks if adding 1 to the shape (with roration enum) courses the shape to change
+            Tile testTile = new(tile.X,tile.Y,tile.shape);
+            int newTileShape = 0;
+            if ((int)tile.shape % 4 == 3) // checks if adding 1 to the shape (with roration enum) courses the shape to change
             {
-                newTile = (int)tile.shape-3;
+                newTileShape = (int)tile.shape - 3;
             }
             else // add 1 to the enum or 90 degrees to the shape 
             {
-                newTile = (int)tile.shape+1;
+                newTileShape = (int)tile.shape + 1;
             }
-            tile.fillMap((Shape)newTile);
+            testTile.fillMap((Shape)newTileShape);
+            for (int x = 0; x<4; x++)
+            {
+                for (int y = 0; y < 4; y++)
+                {
+                    if (outOfBounceCheck(testTile.X + x,  testTile.Y + y)) 
+                    {
+                        if (fild[testTile.X + x, testTile.Y + y] != ' ' && fild[testTile.X + x, testTile.Y + y] != 'X' && testTile.map[x, y] == 'X') // collision occoured
+                        {
+                            rotation = true;
+                            goto end;
+                        }
+                    }
+                    else if (testTile.map[x, y] == 'X')
+                    {
+                        rotation = true;
+                        goto end;
+                    }
+                }
+            }
+        }
+        else if (direction == 'd') // right
+        {
+            const int move = 1;
+            for (int x = 0; x < 4; x++)
+            {
+                for (int y = 0; y < 4; y++)
+                {
+                    if (outOfBounceCheck(tile.X + x + move, tile.Y + y)) 
+                    {
+                        if (fild[tile.X + x + move,tile.Y + y] != ' ' && fild[tile.X + x + move, tile.Y + y] != 'X' && tile.map[x, y] == 'X') //collision check 
+                        {
+                            horizontal = true;
+                            goto end;
+                        }
+                    }
+                    else if (tile.map[x, y] == 'X')
+                    {
+                        horizontal = true;
+                        goto end;
+                    }
+                }
+            }
+        }
+        else if (direction == 'a') // left
+        {
+            const int move = -1;
+            for (int x = 0; x < 4; x++)
+            {
+                for (int y = 0; y < 4; y++)
+                {
+                    if (outOfBounceCheck(tile.X + x + move, tile.Y + y)) 
+                    {
+                        if (fild[tile.X + x + move, tile.Y + y] != ' '  && fild[tile.X + x + move, tile.Y + y] != 'X' && tile.map[x, y] == 'X') //collision check 
+                        {
+                            horizontal = true;
+                            goto end;
+                        }
+                    }
+                    else if (tile.map[x, y] == 'X')
+                    {
+                        horizontal = true;
+                        goto end;
+                    }
+                }
+            }
+        }
+        else if (direction == 's') // down
+        {
+            const int move = 1;
+            for (int x = 0; x < 4; x++)
+            {
+                for (int y = 0; y < 4; y++)
+                {
+                    if (outOfBounceCheck(tile.X + x, tile.Y + y + move)) 
+                    {
+                        if (fild[tile.X + x, tile.Y + y + move] != ' ' && fild[tile.X + x, tile.Y + y + move] != 'X' && tile.map[x, y] == 'X') //collision check 
+                        {
+                            vertical = true;
+                            goto end;
+                        }
+                    }
+                    else if (tile.map[x, y] == 'X') // not optimal 
+                    {
+                        vertical = true;
+                        goto end;
+                    }
+                }
+            }
+        }
+    end:
+#if DEBUG
+        debugInfo.Add($"in collision() direction: {direction}, h: {horizontal}, v: {vertical}, r: {rotation}");
+#endif
+        return new CollisionInfo(horizontal,vertical,rotation);
+    }
+    private bool outOfBounceCheck(int x, int y)
+    {
+        return x < fildWidth && x >= 0 && y < fildHeigh && y >= 0;
+    }
+    private Tile createNewTile()
+    {
+#if DEBUG
+        debugInfo.Add("in reateNewTile()");
+#endif
+        return new(fildWidth / 2 - 2, -2, (Shape)(rand.Next(0, 7) * 4));
+    }
+    private void doMove(char direction) 
+    {
+#if DEBUG
+        debugInfo.Add($"in doMove() direction: {direction}");
+#endif
+        if (direction == ' ')
+        {
+            return;
+        }
+        // clear old one
+        for (int x = 0; x < 4; x++)
+        {
+            for (int y = 0; y < 4; y++)
+            {
+                if (outOfBounceCheck(tile.X + x, tile.Y + y)) 
+                {
+                    if (fild[tile.X + x, tile.Y + y] == 'X')
+                    {
+                        fild[tile.X + x, tile.Y + y] = ' ';
+                    }
+                }
+            }
+        }
+        // set new position
+        if (direction == 'w')
+        {
+            int newTileShape = 1;
+            if ((int)tile.shape%4==3) // checks if adding 1 to the shape (with roration enum) courses the shape to change
+            {
+                newTileShape = (int)tile.shape-3;
+            }
+            else // add 1 to the enum or 90 degrees to the shape 
+            {
+                newTileShape = (int)tile.shape+1;
+            }
+            tile.fillMap((Shape)newTileShape);
+            tile.shape = (Shape)newTileShape;
         }
         else if (direction == 'a')
         {
@@ -181,23 +387,35 @@ public class Game
             {
                 if (tile.map[x, y] == 'X') //if there is a pice aka if it is not empty
                 {
-                    fild[tile.X + x, tile.Y + y] = tile.map[x, y]; //lets just hope that that works 
+                    if (outOfBounceCheck(tile.X + x, tile.Y + y))
+                    {
+                        fild[tile.X + x, tile.Y + y] = tile.map[x, y]; //lets just hope that that works 
+                    }
                 }
             }
         }
     }
-    private void getInput()
+    private char getInput()
     {
+        if (newInputkeyFlag)
+        {
+            newInputkeyFlag = false;
+            if (inputAsync == 'w' || inputAsync == 's' || inputAsync == 'a' || inputAsync == 'd' || inputAsync == '\u001b')
+            {
+                return inputAsync;
+            }
+        }
+        return ' ';
+    }
+    private void getInputAsync() // this one will be in another thread
+    {
+#if DEBUG
+        debugInfo.Add("in getInputAsyne()");
+#endif
         while (!stopInput)
         {
-            input = ' ';
-            ConsoleKeyInfo temp = Console.ReadKey();
-            if (!(temp.KeyChar == 'w'||temp.KeyChar == 's'||temp.KeyChar=='a'||temp.KeyChar=='d'))
-            {
-                continue;
-            }
-            input = temp.KeyChar;
+            inputAsync = Console.ReadKey().KeyChar;
+            newInputkeyFlag = true;
         }
     }
 }
-

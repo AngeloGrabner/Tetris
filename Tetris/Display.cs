@@ -1,17 +1,110 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-public static class Display // to be added
+﻿public static class Display 
 {
+    private static bool errorFlag = false;
+    private static NewColors color = new();
+    private const char fullBlock = '\u2588'; 
+    private static char[,] s_input = new char[0,0];
+    private static CHAR_INFO[] f;
+    private static int width = 10, height = 20;
     static Display()
     {
-
+        Console.CursorVisible = false;
+        Console.OutputEncoding = System.Text.Encoding.Unicode;
+        f = new CHAR_INFO[width*height];
+       setup(width,height);
+    }
+    public static void setup(int Width, int Height)
+    {
+        width = Width*2; 
+        height = Height;
+        if (width <= Console.LargestWindowWidth && height <= Console.LargestWindowHeight)
+        {
+#pragma warning disable CA1416
+            Console.WindowHeight = height;
+            Console.WindowWidth = width;
+#pragma warning restore CA1416 
+            f = new CHAR_INFO[width * height];
+            ColorSupport.setup(width, height);
+        }
+        else
+        {
+            throw new ArgumentException("Width and or Height paramenter incorrect");
+        }
     }
     public static void update(char[,] input)
     {
+        s_input = input;
+        draw();
+        if (!errorFlag)
+        {
+            ColorSupport.displayFrame(f);
+        }
+        else
+        {
+            throw new Exception("Display error");
+        }
+    }
+    private static void draw()
+    {
+        for (int i = 0; i < f.Length; i++) // clear old 
+        {
+            f[i].UnicodeChar = ' ';
+            f[i].Attributes = (ushort)ConsoleColor.White;
+        }
 
+        //for (int i = width-1;i<f.Length;i+=width)
+        //{
+        //    f[i].UnicodeChar = '\n';
+        //}
+
+        for (int x = 0; x < s_input.GetLength(0); x++)
+        {
+            for (int y = 0; y < s_input.GetLength(1); y++)
+            {
+                if (s_input[x,y] != ' ' && s_input[x,y] != '\n')
+                {
+                    f[convert(x * 2, y)].UnicodeChar = fullBlock; //left side 
+                    f[convert((x * 2) + 1, y)].UnicodeChar = fullBlock; // right side 
+                    switch (s_input[x,y])
+                    {
+                        case 'I':
+                            color = NewColors.lightBlue;
+                            break;
+                        case 'J':
+                            color = NewColors.pink;
+                            break;
+                        case 'L':
+                            color = NewColors.orange;
+                            break;
+                        case 'O':
+                            color= NewColors.yellow;
+                            break;
+                        case 'S':
+                            color = NewColors.red;
+                            break;
+                        case 'Z':
+                            color = NewColors.green;
+                            break;
+                        case 'T':
+                            color = NewColors.purple;
+                            break;
+                        case 'X':
+                        default:
+                            color = NewColors.white;
+                            break;
+                    }
+                    f[convert(x * 2, y)].Attributes = (ushort)color;
+                    f[convert((x * 2)+1, y)].Attributes = (ushort)color;
+                    //for (int i = 0; i <= width; i++) // for debuging
+                    //{
+                    //    f[i].AsciiChar = Convert.ToChar(i % 10 + 48);
+                    //}
+                }
+            }
+        }
+    }
+    private static int convert(int x, int y) // makes a 2d coordinate into a 1d one 
+    {
+        return y * width + x; 
     }
 }
