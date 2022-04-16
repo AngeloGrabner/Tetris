@@ -26,12 +26,12 @@ public class Game
     private CollisionInfo move;
     private Tile tile;
     private Random rand = new Random();
-    public Game(int fildWidth = 10, int fildHeigh = 20)
+    public Game(int fildWidth = 10, int fildHeigh = 20) // changing the numbers courses bugs
     {
         this.fildWidth = fildWidth;
         this.fildHeigh = fildHeigh;
 
-        //Display.setup(fildWidth, fildHeigh); work in progress
+        //Display.setup(fildWidth*2, fildHeigh); work in progress
         tile = new(0,0,Shape.I_0); 
         fild = new char[this.fildWidth,this.fildHeigh];
         for (int x = 0; x < fild.GetLength(0);x++)

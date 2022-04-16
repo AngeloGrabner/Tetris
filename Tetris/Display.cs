@@ -16,7 +16,7 @@
     }
     public static void setup(int Width, int Height)
     {
-        width = Width*2; 
+        width = Width; 
         height = Height;
         if (width <= Console.LargestWindowWidth && height <= Console.LargestWindowHeight)
         {
