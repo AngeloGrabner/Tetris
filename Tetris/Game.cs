@@ -96,6 +96,7 @@ public class Game
                         calculateCooldown(++score);
                         clearRowAndMoveAllOtherDown(tile.Y + i);
                     }
+
                 }
                 // lock tile in place spawn new tile etc.
                 setInPlace();
@@ -142,6 +143,10 @@ public class Game
                 }
             }
         }
+
+    }
+    private void setFinalPosition() // not to sure about that 
+    {
 
     }
     private void clearRowAndMoveAllOtherDown(int y)
