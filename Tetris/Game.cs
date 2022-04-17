@@ -19,7 +19,7 @@ public class Game
     private char[,] fild;
     private bool gameOver = false, stopInput = false, tileExists = false, newInputkeyFlag = true;
     private char inputAsync = ' ', input = ' ';
-    private int errorFlag = 0, cooldown = 500, forceDownCounter = 0, score = 0, fildWidth, fildHeigh;
+    private int errorFlag = 0, cooldown = 250, forceDownCounter = 0, score = 0, fildWidth, fildHeigh, count = 0;
     public int ErrorFlag { get { return errorFlag; } }
     public int Score { get { return score; } }
     private Thread thd;
@@ -58,7 +58,6 @@ public class Game
             Console.WriteLine("error: "+errorFlag);
             return;
         }
-        int count = 0;
         bool currentInputKeyFlag = newInputkeyFlag;
         while (!gameOver)
         {
@@ -76,7 +75,8 @@ public class Game
 
             if (!tileExists)
             {
-                //tile = new(0,0,Shape.I_0);
+
+                //tile = new(fildWidth / 2 - 2, -2, Shape.I_0);
                 tile = createNewTile();
                 tileExists = true;
             }
@@ -114,6 +114,8 @@ public class Game
         }
         // post game
         stopInput = true; // lets the thd thred suspent
+        thd.Join();
+        Console.ReadKey(true);
         Console.Clear();
     }
     private void calculateCooldown(int gameScore)
@@ -133,20 +135,16 @@ public class Game
         {
             for (int y = 0; y < 4; y++)
             {
-                if (!(tile.X + x < fildWidth && tile.X + x >= 0 && tile.Y + y < fildHeigh && tile.Y + y >= 0)) // another out of bounce check. i know that that is alot of code dupelication
+                if (outOfBounceCheck(tile.X + x,tile.Y + y)) // another out of bounce check. i know that that is alot of code dupelication
                 {
-                    continue;
+                    if (fild[tile.X+x,tile.Y+y] == 'X')
+                    {
+                        fild[tile.X + x, tile.Y + y] = tile.endCharacter;
+                    }
                 }
-                if (fild[tile.X+x,tile.Y+y] == 'X')
-                {
-                    fild[tile.X + x, tile.Y + y] = tile.endCharacter;
-                }
+
             }
         }
-
-    }
-    private void setFinalPosition() // not to sure about that 
-    {
 
     }
     private void clearRowAndMoveAllOtherDown(int y)
@@ -161,7 +159,7 @@ public class Game
 
         for (int i = 0; i < fildWidth;i++)
         {
-            for (int j = fildHeigh-1; j > 0; j--) // looking for a out of bounce 
+            for (int j = y; j > 0; j--) 
             {
                 fild[i,j] = fild[i,j-1]; 
             }
@@ -323,17 +321,36 @@ public class Game
     {
         return x < fildWidth && x >= 0 && y < fildHeigh && y >= 0;
     }
-    private Tile createNewTile()
+    private Tile createNewTile() //somehow the shapes werent random 
     {
+        int randNum = rand.Next(7);
 #if DEBUG
-        debugInfo.Add("in reateNewTile()");
+        debugInfo.Add($"in reateNewTile() randNum: {randNum}");
 #endif
-        return new(fildWidth / 2 - 2, -2, (Shape)(rand.Next(0, 7) * 4));
+        switch (randNum)
+        {
+            case 0:
+                return new(fildWidth / 2 - 2, -2, Shape.I_0);
+            case 1:
+                return new(fildWidth / 2 - 2, -1, Shape.J_0);
+            case 2:
+                return new(fildWidth / 2 - 2, -1, Shape.L_0);
+            case 3:
+                return new(fildWidth / 2 - 2, -1, Shape.O_0);
+            case 4:
+                return new(fildWidth / 2 - 2, -1, Shape.S_0);
+            case 5:
+                return new(fildWidth / 2 - 2, -1, Shape.T_0);
+            case 6:
+                return new(fildWidth / 2 - 2, -1, Shape.Z_0);
+        }
+        return null;
+        
     }
     private void doMove(char direction) 
     {
 #if DEBUG
-        debugInfo.Add($"in doMove() direction: {direction}");
+        debugInfo.Add($"in doMove() direction: {direction}, tile.X {tile.X}, tile.Y {tile.Y}");
 #endif
         if (direction == ' ')
         {
@@ -395,7 +412,7 @@ public class Game
             }
         }
     }
-    private char getInput()
+    private char getInput() 
     {
         if (newInputkeyFlag)
         {
@@ -414,7 +431,7 @@ public class Game
 #endif
         while (!stopInput)
         {
-            inputAsync = Console.ReadKey().KeyChar;
+            inputAsync = Console.ReadKey(true).KeyChar;
             newInputkeyFlag = true;
         }
     }

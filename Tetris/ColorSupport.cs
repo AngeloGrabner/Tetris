@@ -111,7 +111,7 @@ public struct CHAR_INFO
     [FieldOffset(2)] //2 bytes seems to work properly
     public UInt16 Attributes;
 }
-internal static class ColorSupport
+internal static class ColorSupport //and some more stuff like buffer size and char size
 {
     private static CONSOLE_SCREEN_BUFFER_INFO_EX conScreBufInfo; // great variable naming
     private static SMALL_RECT _small_rect;
@@ -154,7 +154,9 @@ internal static class ColorSupport
     {
         conScreBufInfo.cbSize = Marshal.SizeOf<CONSOLE_SCREEN_BUFFER_INFO_EX>(conScreBufInfo);
         if (GetConsoleScreenBufferInfoEx(outputHandle, ref conScreBufInfo))
-        {        
+        {
+            conScreBufInfo.dwSize = new((short)_width, (short)_height);
+
             //we'll see how the RGB values look in the game!
             conScreBufInfo.darkBlue =  new(Color.Yellow); // yellow for O
             conScreBufInfo.darkGreen = new(Color.SkyBlue); // light blue for I

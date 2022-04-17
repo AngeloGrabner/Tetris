@@ -4,32 +4,26 @@
     I_90 = 1,
     I_180 = 2,
     I_270 = 3,
-
     O_0 = 4,
     O_90 = 5,
     O_180 = 6,
     O_270 = 7,
-
     L_0 = 8,
     L_90 = 9,
     L_180 = 10,
     L_270 = 11,
-
     J_0 = 12,
     J_90 = 13,
     J_180 = 14,
     J_270 = 15,
-
     T_0 = 16,
     T_90 = 17,
     T_180 = 18,
     T_270 = 19,
-
     S_0 = 20,
     S_90 = 21,
     S_180 = 22,
     S_270 = 23,
-
     Z_0 = 24,
     Z_90 = 25,
     Z_180 = 26,
@@ -97,7 +91,7 @@ public class Tile
         }
         return '#';
     }
-    public void fillMap(Shape s)
+    public void fillMap(Shape s) // x and y are swaped for the game, due to 2d array layout
     {
         switch (s)
         {
@@ -256,6 +250,11 @@ public class Tile
                   {' ', ' ', ' ', ' ' } };
                 break;
             default:
+                _map = new char[,]
+                { {'X', 'X', 'X', 'X' },
+                  {'X', 'X', 'X', 'X' },
+                  {'X', 'X', 'X', 'X' },
+                  {'X', 'X', 'X', 'X' } };
                 break;
         }
     }
