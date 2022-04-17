@@ -14,6 +14,18 @@ public enum NewColors // we dont need more colors 9, are enough
    purple = 8,
    white = 15
 }
+[StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
+public struct CONSOLE_FONT_INFO_EX
+{
+    public int cbSize;
+    public int FontIndex;
+    public short FontWidth;
+    public short FontHeight;
+    public int FontFamily;
+    public int FontWeight;
+    [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 32)]
+    public string FaceName;
+}
 [StructLayout(LayoutKind.Sequential)]
 public struct COLORREF
 {
@@ -111,21 +123,21 @@ public struct CHAR_INFO
     [FieldOffset(2)] //2 bytes seems to work properly
     public UInt16 Attributes;
 }
-internal static class ColorSupport //and some more stuff like buffer size and char size
+internal static class ExtendedConsole //and some more stuff like buffer size and char size
 {
     private static CONSOLE_SCREEN_BUFFER_INFO_EX conScreBufInfo; // great variable naming
+    private static CONSOLE_FONT_INFO_EX conFonInfo;
     private static SMALL_RECT _small_rect;
     private static int _width = 20, _height = 10;
     private const int genericWrite = -11;
     private static IntPtr outputHandle;
     private static bool errorFlag = false;
     private static List<int> errors = new();
-    static ColorSupport()
+    static ExtendedConsole()
     {
         outputHandle = GetStdHandle(genericWrite);
         conScreBufInfo = new CONSOLE_SCREEN_BUFFER_INFO_EX();
-        setup(_width,_height);
-        changeColors();
+        setup(_width, _height);
     }
     public static void setup(int width, int height) // width and height of the buffer thats going to be displaied
     {
@@ -147,10 +159,10 @@ internal static class ColorSupport //and some more stuff like buffer size and ch
         {
             errorFlag = true;
             errors.Add(Marshal.GetLastWin32Error());
-            Console.WriteLine("Latest Win32Error: " + errors[errors.Count-1]);
+            Console.WriteLine("Latest Win32Error: " + errors[errors.Count - 1]);
         }
     }
-    private static void changeColors()
+    public static void changeColors()
     {
         conScreBufInfo.cbSize = Marshal.SizeOf<CONSOLE_SCREEN_BUFFER_INFO_EX>(conScreBufInfo);
         if (GetConsoleScreenBufferInfoEx(outputHandle, ref conScreBufInfo))
@@ -158,7 +170,7 @@ internal static class ColorSupport //and some more stuff like buffer size and ch
             conScreBufInfo.dwSize = new((short)_width, (short)_height);
 
             //we'll see how the RGB values look in the game!
-            conScreBufInfo.darkBlue =  new(Color.Yellow); // yellow for O
+            conScreBufInfo.darkBlue = new(Color.Yellow); // yellow for O
             conScreBufInfo.darkGreen = new(Color.SkyBlue); // light blue for I
             conScreBufInfo.darkCyan = new(Color.Crimson);  // red for S
             conScreBufInfo.darkRed = new(Color.LimeGreen);   // green for Z
@@ -169,13 +181,50 @@ internal static class ColorSupport //and some more stuff like buffer size and ch
             if (!SetConsoleScreenBufferInfoEx(outputHandle, ref conScreBufInfo))
             {
                 errors.Add(Marshal.GetLastWin32Error());
-                Console.WriteLine("error: " + errors[errors.Count-1]);
+                Console.WriteLine("error: " + errors[errors.Count - 1]);
             }
         }
         else
         {
             errors.Add(Marshal.GetLastWin32Error());
-            Console.WriteLine("error: " + errors[errors.Count-1]);
+            Console.WriteLine("error: " + errors[errors.Count - 1]);
+        }
+    }
+    public static void changeFont(short FontX, short FontY)
+    {
+
+        conFonInfo.cbSize = Marshal.SizeOf<CONSOLE_FONT_INFO_EX>(conFonInfo);
+        if (GetCurrentConsoleFontEx(outputHandle,false, ref conFonInfo))
+        {  
+            conFonInfo.FontHeight = FontY;
+            conFonInfo.FontWidth = FontX;
+            conFonInfo.cbSize = Marshal.SizeOf<CONSOLE_FONT_INFO_EX>(conFonInfo);
+            if (!SetCurrentConsoleFontEx(outputHandle,false, ref conFonInfo))
+            {
+                errors.Add(Marshal.GetLastWin32Error());
+                Console.WriteLine("error: " + errors[errors.Count - 1]);
+            }
+        }
+        else
+        {
+            errors.Add(Marshal.GetLastWin32Error());
+            Console.WriteLine("error: " + errors[errors.Count - 1]);
+        }
+    }
+    public static void changeWindowSize(short width, short height) // win32 error 87
+    {
+        COORD consoleWindowSize = new();
+        consoleWindowSize = GetLargestConsoleWindowSize(outputHandle);
+        SMALL_RECT srWindowSize = new();
+        if (consoleWindowSize.X < width || consoleWindowSize.Y < height)
+        {
+            throw new ArgumentException("somthing with erros");
+        }
+        srWindowSize = new SMALL_RECT(0, 0, consoleWindowSize.X, consoleWindowSize.Y);
+        if (!SetConsoleWindowInfo(outputHandle, false,ref srWindowSize))
+        {
+            errors.Add(Marshal.GetLastWin32Error());
+            Console.WriteLine("error: " + errors[errors.Count - 1]);
         }
     }
     public static List<int> getAllErrors()
@@ -210,4 +259,28 @@ internal static class ColorSupport //and some more stuff like buffer size and ch
     COORD dwBufferCoord,
     ref SMALL_RECT lpWriteRegion
     );
+
+    [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
+    extern static bool GetCurrentConsoleFontEx(
+    IntPtr hConsoleOutput,
+    bool bMaximumWindow, 
+    ref CONSOLE_FONT_INFO_EX lpConsoleCurrentFont);
+
+    [DllImport("kernel32.dll", SetLastError = true)]
+    static extern bool SetCurrentConsoleFontEx(
+    IntPtr ConsoleOutput,
+    bool MaximumWindow,
+    ref CONSOLE_FONT_INFO_EX ConsoleCurrentFontEx);
+
+    [DllImport("kernel32.dll", SetLastError = true)]
+    static extern bool SetConsoleWindowInfo(
+    IntPtr hConsoleOutput,
+    bool bAbsolute,
+    ref SMALL_RECT lpConsoleWindow
+    );
+
+    [DllImport("kernel32.dll", SetLastError = true)]
+    static extern COORD GetLargestConsoleWindowSize(
+        IntPtr hConsoleOutput
+        );
 }

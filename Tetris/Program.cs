@@ -3,6 +3,7 @@ class Program
 {
     static void Main()
     {
+        /*
         Game game = new();
         game.run();
 #pragma warning disable CA1416
@@ -13,6 +14,12 @@ class Program
             Console.WriteLine(element);
 #endif
         Console.WriteLine($"your score is: {game.Score}, press enter to exit");
-        Console.ReadLine();
+        Console.ReadLine();*/
+        int width = 20, height = 20;
+        ExtendedConsole.setup(width, height);
+        ExtendedConsole.changeColors();
+        ExtendedConsole.changeFont(12, 24);
+        ExtendedConsole.changeWindowSize((short)width, (short)(height + 1)); // doesnt work (yet)
+
     }
 }

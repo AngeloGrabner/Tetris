@@ -24,7 +24,10 @@
             Console.WindowWidth = width;
 #pragma warning restore CA1416 
             f = new CHAR_INFO[width * height];
-            ColorSupport.setup(width, height);
+            ExtendedConsole.setup(width, height);
+            ExtendedConsole.changeColors();
+            ExtendedConsole.changeFont(12, 24);
+            //ExtendedConsole.changeWindowSize((short)width, (short)(height+1)); // doesnt work (yet)
         }
         else
         {
@@ -37,7 +40,7 @@
         draw();
         if (!errorFlag)
         {
-            ColorSupport.displayFrame(f);
+            ExtendedConsole.displayFrame(f);
         }
         else
         {
