@@ -132,7 +132,7 @@ internal static class ExtendedConsole //and some more stuff like buffer size and
     private const int genericWrite = -11;
     private static IntPtr outputHandle;
     private static bool errorFlag = false;
-    private static List<int> errors = new();
+    private static List<string> errors = new();
     static ExtendedConsole()
     {
         outputHandle = GetStdHandle(genericWrite);
@@ -158,7 +158,7 @@ internal static class ExtendedConsole //and some more stuff like buffer size and
         if (!WriteConsoleOutput(outputHandle, input, new COORD((short)_width, (short)_height), new COORD(0, 0), ref _small_rect))
         {
             errorFlag = true;
-            errors.Add(Marshal.GetLastWin32Error());
+            errors.Add(Marshal.GetLastWin32Error().ToString());
             Console.WriteLine("Latest Win32Error: " + errors[errors.Count - 1]);
         }
     }
@@ -180,13 +180,13 @@ internal static class ExtendedConsole //and some more stuff like buffer size and
             conScreBufInfo.cbSize = Marshal.SizeOf<CONSOLE_SCREEN_BUFFER_INFO_EX>(conScreBufInfo);
             if (!SetConsoleScreenBufferInfoEx(outputHandle, ref conScreBufInfo))
             {
-                errors.Add(Marshal.GetLastWin32Error());
+                errors.Add(Marshal.GetLastWin32Error().ToString());
                 Console.WriteLine("error: " + errors[errors.Count - 1]);
             }
         }
         else
         {
-            errors.Add(Marshal.GetLastWin32Error());
+            errors.Add(Marshal.GetLastWin32Error().ToString());
             Console.WriteLine("error: " + errors[errors.Count - 1]);
         }
     }
@@ -201,33 +201,31 @@ internal static class ExtendedConsole //and some more stuff like buffer size and
             conFonInfo.cbSize = Marshal.SizeOf<CONSOLE_FONT_INFO_EX>(conFonInfo);
             if (!SetCurrentConsoleFontEx(outputHandle,false, ref conFonInfo))
             {
-                errors.Add(Marshal.GetLastWin32Error());
+                errors.Add(Marshal.GetLastWin32Error().ToString());
                 Console.WriteLine("error: " + errors[errors.Count - 1]);
             }
         }
         else
         {
-            errors.Add(Marshal.GetLastWin32Error());
+            errors.Add(Marshal.GetLastWin32Error().ToString());
             Console.WriteLine("error: " + errors[errors.Count - 1]);
         }
     }
-    public static void changeWindowSize(short width, short height) // win32 error 87
+    public static void changeWindowSize(short width, short height) 
     {
-        COORD consoleWindowSize = new();
-        consoleWindowSize = GetLargestConsoleWindowSize(outputHandle);
-        SMALL_RECT srWindowSize = new();
-        if (consoleWindowSize.X < width || consoleWindowSize.Y < height)
+        if (width < Console.LargestWindowWidth && height < Console.LargestWindowHeight && width > 0 && height > 0)
         {
-            throw new ArgumentException("somthing with erros");
+#pragma warning disable
+            Console.WindowHeight = height;
+            Console.WindowWidth = width;
+#pragma warning enable
         }
-        srWindowSize = new SMALL_RECT(0, 0, consoleWindowSize.X, consoleWindowSize.Y);
-        if (!SetConsoleWindowInfo(outputHandle, false,ref srWindowSize))
+        else
         {
-            errors.Add(Marshal.GetLastWin32Error());
-            Console.WriteLine("error: " + errors[errors.Count - 1]);
+            throw new ArgumentException();
         }
     }
-    public static List<int> getAllErrors()
+    public static List<string> getAllErrors()
     {
         return errors;
     }
@@ -271,16 +269,4 @@ internal static class ExtendedConsole //and some more stuff like buffer size and
     IntPtr ConsoleOutput,
     bool MaximumWindow,
     ref CONSOLE_FONT_INFO_EX ConsoleCurrentFontEx);
-
-    [DllImport("kernel32.dll", SetLastError = true)]
-    static extern bool SetConsoleWindowInfo(
-    IntPtr hConsoleOutput,
-    bool bAbsolute,
-    ref SMALL_RECT lpConsoleWindow
-    );
-
-    [DllImport("kernel32.dll", SetLastError = true)]
-    static extern COORD GetLargestConsoleWindowSize(
-        IntPtr hConsoleOutput
-        );
 }

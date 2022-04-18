@@ -27,7 +27,7 @@
             ExtendedConsole.setup(width, height);
             ExtendedConsole.changeColors();
             ExtendedConsole.changeFont(12, 24);
-            //ExtendedConsole.changeWindowSize((short)width, (short)(height+1)); // doesnt work (yet)
+            ExtendedConsole.changeWindowSize((short)width, (short)(height+1)); // doesnt work (yet)
         }
         else
         {
