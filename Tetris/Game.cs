@@ -120,7 +120,7 @@ public class Game
     }
     private void calculateCooldown(int gameScore)
     {
-        cooldown = cooldown - (gameScore*gameScore);
+        cooldown = cooldown - (gameScore*3);
         if (cooldown < 0)
         {
             cooldown = 0;

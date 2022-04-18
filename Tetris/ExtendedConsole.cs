@@ -216,7 +216,7 @@ internal static class ExtendedConsole //and some more stuff like buffer size and
         if (width < Console.LargestWindowWidth && height < Console.LargestWindowHeight && width > 0 && height > 0)
         {
 #pragma warning disable
-            Console.WindowHeight = height;
+            Console.WindowHeight = height-1;
             Console.WindowWidth = width;
 #pragma warning enable
         }
